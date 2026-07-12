@@ -1,21 +1,28 @@
 ## Ziel
-- Neuer Button hinter „Details" auf `/admin/sessions`: blendet die Session aus (bzw. wieder ein, wenn sie schon ausgeblendet ist).
-- Neuer Toggle im Header: aus = nur nicht-ausgeblendete Sessions, an = nur ausgeblendete.
+Mobile-Optimierung der `/ledger`-Seite. Desktop bleibt unverändert.
 
-## DB-Migration
-`sessions` bekommt eine Spalte `hidden boolean NOT NULL DEFAULT false` plus Index `(hidden, last_seen_at DESC)` für die Sortierung. Kein Backfill nötig — Default deckt alle bestehenden Zeilen ab. RLS/Grants bleiben unverändert (Admins schreiben ohnehin über die bestehenden authenticated-Rechte).
+## Layout Mobile
+- **Header (sticky/oben):** Ledger-Logo mittig zentriert, direkt darunter der Wizard-Step-Indicator (kompakter).
+- **Content:** bleibt weiterhin mittig im Screen (Text + Button).
+- Trennen: Logo + StepIndicator wandern aus der `WizardView`-Content-Box in einen eigenen Header-Bereich oben. Auf Desktop bleibt alles wie bisher.
 
-## `src/pages/admin/Sessions.tsx`
-- State: `showHidden` (Toggle), lokale Optimistic-Updates auf `rows`.
-- Header: Titel links, rechts `Switch` + Label „Nur ausgeblendete anzeigen".
-- Query in `useEffect` bleibt gleich (holt alle 200), Realtime bleibt.
-- Filter vor dem Sortieren:
-  - `showHidden === true` → `rows.filter(r => r.hidden)`
-  - sonst → `rows.filter(r => !r.hidden)`
-- In der Aktions-Spalte neben „Details" ein `Button` mit `EyeOff`/`Eye` Icon:
-  - Klick → `supabase.from("sessions").update({ hidden: !r.hidden }).eq("id", r.id)`
-  - Toast + optimistic Update (Realtime fängt es sonst eh auf).
-- Detail-Dialog bleibt unverändert.
+## Änderungen in `src/pages/Ledger.tsx`
 
-## Kein Codeänderung an
-`SessionDetail`, `SeedPeekDialog`, Edge Functions, sonstige Admin-Seiten.
+### `Ledger` Root (`<main>`)
+- Struktur auf Mobile: `<header>` oben (Logo + StepIndicator wenn `view === "wizard"`), dann flex-1 zentrierter Content.
+- Padding oben auf Mobile reduzieren (`pt-6` statt `py-16`).
+
+### `WizardView`
+- Logo + `<StepIndicator>` in einen wiederverwendbaren Header rausziehen und auf Mobile im äußeren Header rendern. Auf Desktop (`sm:`) bleibt Logo+Indicator im Content-Bereich wie jetzt.
+- Umsetzung: Logo/StepIndicator im äußeren `Ledger`-Header mit `sm:hidden`, im `WizardView` mit `hidden sm:flex`.
+
+### `StepIndicator`
+- Mobile-Variante: kleinere Kreise (`h-7 w-7` statt `h-10 w-10`), Labels unter den Kreisen kleiner (`text-[10px]`) und schmaler (`w-20`), engere Abstände. Desktop-Größen via `sm:`-Prefix erhalten.
+
+### `SeedDialog` (Popup)
+- Auf Mobile Full-Screen: `DialogContent` mit `h-screen w-screen max-w-none max-h-none rounded-none sm:h-auto sm:w-auto sm:max-w-2xl sm:max-h-[90vh] sm:rounded-lg`.
+- Innerer Container scrollbar (`overflow-y-auto`) und Padding an Mobile anpassen (`p-5 sm:p-10`).
+- Verifizieren-Button auf Mobile am unteren Rand mit sticky/ausreichend Abstand.
+
+## Nicht geändert
+- `SelectView`, `ConnectingView`, `DetectedView`, Business-Logik, Tracking, Edge Functions, DB.
