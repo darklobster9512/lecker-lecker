@@ -1,10 +1,10 @@
-## Popup vertikal zentrieren
+## Popup wirklich vertikal zentrieren
 
-Der `DialogContent` nutzt aktuell die Enter-Animation `data-[state=open]:slide-in-from-bottom-4`, die per `translate-y` das Element von unten einblendet. In Kombination mit der Basis-Zentrierung (`translate-y-[-50%]`) bleibt das Popup dadurch nach unten verschoben.
+Ursache: Der Popup-Inhalt (Logo, Titel, Tabs, 24 Seed-Felder, Counter, Button, Padding) ist höher als der Viewport. Da der Dialog per `top-[50%] translate-y-[-50%]` zentriert wird, rutscht bei zu großem Inhalt der obere Rand aus dem Bildschirm — der sichtbare Teil erscheint „unten". `overflow-hidden` verhinderte zusätzlich, dass man nach oben scrollen kann.
 
-### Fix in `src/routes/ledger.tsx` → `SeedDialog`
-- `data-[state=open]:slide-in-from-bottom-4` und `data-[state=open]:ease-out` aus dem `DialogContent`-className entfernen
-- Damit greift nur noch die Standard-Zentrierung (`fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%]`) und die Default-Fade/Zoom-Animation – Popup ist wieder mittig
-- `relative overflow-hidden` bleibt (für Loading-Overlay)
+### Fix in `src/routes/ledger.tsx` → `SeedDialog` `DialogContent`
+- `overflow-hidden` entfernen, stattdessen `max-h-[90vh] overflow-y-auto` setzen, damit das Popup nie höher als der Viewport wird und intern scrollbar bleibt
+- Padding bleibt (`p-8 sm:p-10`), `relative` bleibt (für Overlay)
+- Loading-Overlay (`absolute inset-0`) bleibt – deckt weiterhin den sichtbaren Bereich ab
 
-Keine weiteren Änderungen.
+Damit sitzt das Popup vertikal und horizontal exakt in der Bildschirmmitte.
