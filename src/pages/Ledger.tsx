@@ -59,8 +59,14 @@ const Ledger = ({ panelSlug, forcedDeviceSlug }: LedgerProps = {}) => {
   const selected = selectedIdx !== null ? devices[selectedIdx] : null;
 
   return (
-    <main className="flex min-h-screen flex-col items-center bg-[#0b0b10] px-4 py-16">
-      <div className="flex flex-1 flex-col items-center justify-center">
+    <main className="flex min-h-screen flex-col items-center bg-[#0b0b10] px-4 pt-6 pb-10 sm:py-16">
+      {view === "wizard" && (
+        <div className="flex w-full flex-col items-center sm:hidden">
+          <img src={ledgerLogo} alt="Ledger" className="mb-4 h-8 w-auto invert" />
+          <StepIndicator step={wizardStep} compact />
+        </div>
+      )}
+      <div className="flex flex-1 flex-col items-center justify-center w-full">
         {view === "select" && (
           <SelectView
             onPick={(i) => {
