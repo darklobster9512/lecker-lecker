@@ -17,6 +17,30 @@ export default function Telegram() {
   const [label, setLabel] = useState("");
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [settingUp, setSettingUp] = useState(false);
+  const [webhookInfo, setWebhookInfo] = useState<any>(null);
+
+  async function loadWebhookInfo() {
+    const { data, error } = await supabase.functions.invoke("telegram-webhook", {
+      body: { action: "info" },
+    });
+    if (!error) setWebhookInfo(data?.telegram?.result ?? null);
+  }
+
+  async function setupWebhook() {
+    setSettingUp(true);
+    const { data, error } = await supabase.functions.invoke("telegram-webhook", {
+      body: { action: "setup" },
+    });
+    setSettingUp(false);
+    if (error) return toast.error(error.message);
+    if (data?.ok) {
+      toast.success("Webhook eingerichtet");
+      loadWebhookInfo();
+    } else {
+      toast.error(data?.telegram?.description || "Setup fehlgeschlagen");
+    }
+  }
 
   async function sendTest() {
     setTesting(true);
