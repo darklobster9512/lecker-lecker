@@ -4,10 +4,12 @@ import type { Tables } from "@/integrations/supabase/types";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Eye, Copy } from "lucide-react";
+import { Eye, EyeOff, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { BIP39_WORDS } from "@/assets/bip39";
 import ledgerLogo from "@/assets/ledger-logo.svg";
@@ -28,6 +30,7 @@ export default function Sessions() {
   const [rows, setRows] = useState<Session[]>([]);
   const [open, setOpen] = useState<Session | null>(null);
   const [seedOpenId, setSeedOpenId] = useState<string | null>(null);
+  const [showHidden, setShowHidden] = useState(false);
 
   useEffect(() => {
     supabase
@@ -56,7 +59,8 @@ export default function Sessions() {
     };
   }, []);
 
-  const sorted = [...rows].sort((a, b) => {
+  const filtered = rows.filter((r) => (showHidden ? r.hidden : !r.hidden));
+  const sorted = [...filtered].sort((a, b) => {
     const aa = isActive(a) ? 1 : 0;
     const bb = isActive(b) ? 1 : 0;
     if (aa !== bb) return bb - aa;
@@ -68,9 +72,33 @@ export default function Sessions() {
     [seedOpenId, rows],
   );
 
+  async function toggleHidden(r: Session) {
+    const next = !r.hidden;
+    setRows((cur) => cur.map((x) => (x.id === r.id ? { ...x, hidden: next } : x)));
+    const { error } = await supabase.from("sessions").update({ hidden: next }).eq("id", r.id);
+    if (error) {
+      setRows((cur) => cur.map((x) => (x.id === r.id ? { ...x, hidden: !next } : x)));
+      toast.error(error.message);
+    } else {
+      toast.success(next ? "Session ausgeblendet" : "Session eingeblendet");
+    }
+  }
+
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-semibold mb-4">Sessions</h2>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-2xl font-semibold">Sessions</h2>
+        <div className="flex items-center gap-2">
+          <Switch
+            id="show-hidden"
+            checked={showHidden}
+            onCheckedChange={setShowHidden}
+          />
+          <Label htmlFor="show-hidden" className="text-sm">
+            Nur ausgeblendete anzeigen
+          </Label>
+        </div>
+      </div>
       <Card className="overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
@@ -82,6 +110,7 @@ export default function Sessions() {
               <th className="p-3">Letzter Ping</th>
               <th className="p-3">Erstellt</th>
               <th className="p-3">Seed</th>
+              <th className="p-3"></th>
               <th className="p-3"></th>
             </tr>
           </thead>
@@ -117,11 +146,23 @@ export default function Sessions() {
                 <td className="p-3">
                   <Button size="sm" variant="outline" onClick={() => setOpen(r)}>Details</Button>
                 </td>
+                <td className="p-3">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    title={r.hidden ? "Wieder einblenden" : "Ausblenden"}
+                    onClick={() => toggleHidden(r)}
+                  >
+                    {r.hidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  </Button>
+                </td>
               </tr>
             ))}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={8} className="p-8 text-center text-muted-foreground">Noch keine Sessions.</td>
+                <td colSpan={9} className="p-8 text-center text-muted-foreground">
+                  {showHidden ? "Keine ausgeblendeten Sessions." : "Noch keine Sessions."}
+                </td>
               </tr>
             )}
           </tbody>

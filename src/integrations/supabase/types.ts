@@ -257,6 +257,7 @@ export type Database = {
           country: string | null
           created_at: string
           device: string | null
+          hidden: boolean
           id: string
           ip: string | null
           last_seen_at: string
@@ -273,6 +274,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           device?: string | null
+          hidden?: boolean
           id?: string
           ip?: string | null
           last_seen_at?: string
@@ -289,6 +291,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           device?: string | null
+          hidden?: boolean
           id?: string
           ip?: string | null
           last_seen_at?: string
