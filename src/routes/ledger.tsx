@@ -33,10 +33,10 @@ function LedgerPage() {
         />
 
         <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-          Choose your Ledger device
+          Wähle dein Ledger-Gerät
         </h1>
         <p className="mt-4 max-w-xl text-lg text-gray-400">
-          Select the device you own to connect securely and continue.
+          Wähle das Gerät, das du besitzt, um dich sicher zu verbinden und fortzufahren.
         </p>
 
         <div className="mt-14 grid w-full grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
