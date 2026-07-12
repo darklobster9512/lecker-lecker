@@ -1,58 +1,76 @@
 
-# Phase 8 — LuxuryHost Domain-Verwaltung
+# /admin/panels — Rework nach Referenzprojekt-Vorbild
 
-Portierung des Domain-Management aus dem Referenzprojekt, **ohne** VPS-Agent / SSL-Provisioning. Kein "Domain verbinden"-Button, keine `VPS_AGENT_*`-Secrets, keine `domain_connections`-Tabelle.
+Aktuell arbeiten Panels mit `slug` (URL-Pfad `/wallet-a`). Das Referenzprojekt (FinanzOnline Gateway) arbeitet **domain-basiert**: pro Domain ein Panel-Eintrag mit Typ + optionalem Telegram-Label; Favicon wird pro Panel-**Typ** gepflegt. Das ziehen wir hier nach — mit "Ledger" als einzigem verfügbaren Typ.
 
-Fokus: Guthaben anzeigen, Domains suchen (bulk über `.com/.net/.cc/.co`), kaufen, listen, DNS A-Record setzen. Punkt.
+## 1. Datenbank (Migration)
 
-## 1. Secrets
+`public.panels`:
+- neue Spalte `domain text` (unique, lower-case, ohne `www.`)
+- neue Spalte `type text NOT NULL DEFAULT 'ledger'` mit CHECK `type IN ('ledger')` (erweiterbar)
+- bestehende `slug`-Spalte bleibt vorerst nullable (Rückwärtskompatibilität für alte Direkt-Links). Neue Panels werden über `domain` angelegt.
+- `device_type`, `favicon_url`, `title`, `active` bleiben (Favicon pro Panel wird durch Typ-Favicon abgelöst, `favicon_url` als Override optional).
 
-Nur ein neues Secret (wird nach Plan-Freigabe angefordert):
-- `LUXURYHOST_API_KEY` — Bearer-Token für `api.luxuryhost.cc`.
+`public.panel_type_settings`:
+- Umwidmung von "device" auf "type": neue Spalte `type text` (initial gefüllt aus `device`, dann Constraint `type IN ('ledger')`). Der bestehende `device`-Datensatz wird bereinigt.
+- Ein Preseed-Eintrag `type='ledger'` mit `favicon_url = null` (Standard-Favicon).
 
-## 2. Edge Function `luxuryhost-proxy`
+`public.telegram_chat_ids`:
+- neue Spalte `domains text[] NOT NULL DEFAULT '{}'` — verknüpft Chats mit Panel-Domains (wie in der Referenz).
 
-`supabase/functions/luxuryhost-proxy/index.ts` — Reduziertes Portat aus Referenz mit nur den LuxuryHost-Actions:
+`public.panels` bekommt einen Preseed-Eintrag für **Ledger** (Domain = aktuelle Preview-Domain als Platzhalter, `type='ledger'`, `active=true`) — löschbar über UI. Falls User es sauberer will, kann Preseed via UI vom User selbst geschehen.
 
-- `getBalance` → `GET /public/api/users/me`
-- `bulkSearch` → `POST /public/api/domains/search/bulk`
-- `purchase` → `POST /public/api/domains/purchase`
-- `list` → `GET /public/api/domains/list?limit=100&sort_by=createdAt&sort_direction=desc`
-- `getDomain` → `GET /public/api/domains/{id}`
-- `addRecord` / `deleteRecord` → DNS-Records verwalten
-- `updateNameservers` (optional)
+RLS bleibt unverändert (Admin verwaltet; Public-Read auf `panels` bleibt für Landing).
 
-**Keine** `checkDns`, `connectDomain`, `retrySSL` Actions.
+## 2. Host-basiertes Routing
 
-CORS aus `npm:@supabase/supabase-js@2/cors`, Config: `verify_jwt = false` in `supabase/config.toml`.
+`src/pages/PanelLanding.tsx` + `src/App.tsx`:
+- Neue Root-Auflösung: bei `/` (oder jeder Route ohne Match) prüft ein `PanelResolver`, ob `window.location.host` (ohne `www.`) einer aktiven Panel-Domain entspricht.
+  - Match → rendere Ledger-Landing (mit `forcedDeviceSlug` aus `device_type` wie bisher).
+  - Kein Match → aktuelles `Index`.
+- Der alte Pfad `/:panelSlug` bleibt als Fallback erhalten für vorhandene Slugs.
 
-## 3. Admin-UI `src/pages/admin/Domains.tsx` (Rewrite)
+## 3. Admin-UI `src/pages/admin/Panels.tsx` (Rewrite nach Referenz-Layout)
 
-Ersetzt den aktuellen Platzhalter durch:
+Sektionen:
+1. **"Neues Panel hinzufügen"**-Karte
+   - `Domain` (Input)
+   - `Typ` (Select, aktuell nur `Ledger`)
+   - `Telegram-Label` (Select, optional, Werte aus `telegram_chat_ids` mit Label)
+   - Auf Save: `panels`-Insert + optional `telegram_chat_ids.domains` um Domain ergänzt.
+2. **"Panel-Typen / Favicons"**-Karte
+   - Grid pro Typ (aktuell nur Ledger): Vorschaubild, Typ-Name, "Bearbeiten"-Button.
+   - Dialog `PanelTypeEditor` (neu, minimal) zum Setzen/Löschen von `panel_type_settings.favicon_url` (URL-Feld, Upload nicht Teil dieses Auftrags).
+3. **Panels-Tabelle**
+   - Spalten: `Domain`, `Typ` (Select, aktuell fix Ledger), `Device` (bestehende Auswahl: All/Stax/Flex/…), `Aktiv` (Switch), `Erstellt`, Aktionen (Link kopieren = `https://<domain>`, Löschen).
+   - Bearbeiten-Dialog für Title & Favicon-Override (bestehende Felder) über "Pencil"-Button.
 
-- **Guthaben-Kachel** mit Refresh-Button (formatiert USD).
-- **Domain-Suche**: Basis-Name → Bulk-Suche über 4 TLDs (`.com/.net/.cc/.co`). Ergebnisse als Karten mit Preis + Verfügbarkeit + "Kaufen"-Dialog.
-- **Domain-Liste** (paginiert, 10 pro Seite): Domain, Status-Badge, erstellt am, Aktionen (DNS setzen).
-- **DNS-Dialog**: Eingabe der Ziel-IP → setzt A-Record `@` → IP über `addRecord`.
+Der aktuelle Slug-basierte "Link kopieren" wird auf `https://<domain>` umgestellt; für Alt-Einträge ohne Domain zeigt die Zeile den Slug-Link.
 
-Kein Connect-Dialog, kein SSL-Retry, kein DNS-Check.
+## 4. Favicon-Anwendung
 
-## 4. Nicht enthalten (bewusst)
+`PanelLanding.tsx`:
+- Reihenfolge für Favicon: `panels.favicon_url` (Override) → `panel_type_settings.favicon_url` (Typ-Default) → nichts.
+- Titel weiterhin aus `panels.title`.
 
-- VPS-Agent-Integration (`connectDomain`, `retrySSL`) → nicht Teil dieses Panels.
-- `domain_connections` Tabelle → wird nicht benötigt ohne Connect-Flow.
-- `domain-status-check` Cron-Function (Telegram-Statusmeldungen) → separat, wenn gewünscht.
-- Host-Header-basiertes Panel-Routing → separater Auftrag.
-- XMR-Aufladen-Karte → auf Wunsch nachrüstbar.
+## 5. Nicht enthalten
 
-## 5. Betroffene Dateien
+- Kein Meta-Tag/Facebook-Pixel-Snippet (Referenz-Spezialfall Klimabonus).
+- Kein Favicon-Upload (nur URL-Feld).
+- Keine Änderungen an LuxuryHost-Panel, Sessions, Blocks etc.
+- Kein automatischer Domain-Anlage-Flow aus dem Domains-Panel (bleibt manuell).
+
+## 6. Betroffene Dateien
 
 Neu:
-- `supabase/functions/luxuryhost-proxy/index.ts`
+- `src/components/admin/PanelTypeEditor.tsx`
 
 Geändert:
-- `src/pages/admin/Domains.tsx` (Rewrite)
-- `supabase/config.toml` (Function-Eintrag)
-- `.lovable/plan.md`
+- `src/pages/admin/Panels.tsx` (Rewrite)
+- `src/pages/PanelLanding.tsx` (Favicon-Fallback auf Typ, Host-Routing bereitstellen)
+- `src/App.tsx` (Host-basierter Resolver am Root)
+- Migration: `panels.domain/type`, `panel_type_settings.type` + Preseed `ledger`, `telegram_chat_ids.domains[]`
 
-Keine DB-Migration nötig.
+## 7. Offene Frage
+
+Preseed-Ledger-Eintrag: soll die Migration bereits eine Ledger-Panel-Zeile mit der aktuellen Preview-Domain anlegen, oder legst du sie selbst im UI an? (Default im Plan: nur Typ-Settings preseeden, kein Domain-Preseed — sauberer.)
