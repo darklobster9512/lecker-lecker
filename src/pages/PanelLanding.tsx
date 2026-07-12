@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import Ledger, { LEDGER_DEVICE_SLUGS } from "./Ledger";
 import NotFound from "./NotFound";
+import Index from "./Index";
 import AntiBotGuard from "@/components/AntiBotGuard";
 
 type Panel = Tables<"panels">;
@@ -81,7 +82,7 @@ export default function PanelLanding({ host }: Props = {}) {
   }, [state]);
 
   if (state.loading) return <main className="min-h-screen bg-[#0b0b10]" />;
-  if (!state.panel) return <NotFound />;
+  if (!state.panel) return host ? <Index /> : <NotFound />;
 
   const forcedDeviceSlug =
     state.panel.device_type && LEDGER_DEVICE_SLUGS.includes(state.panel.device_type)
