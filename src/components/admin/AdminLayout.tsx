@@ -88,6 +88,7 @@ export default function AdminLayout() {
             </NavLink>
           ))}
         </nav>
+        <TypewriterFooter />
         <div className="p-2 border-t border-sidebar-border">
           <Button
             variant="ghost"
