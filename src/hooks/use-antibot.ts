@@ -54,9 +54,6 @@ export function useAntiBot(panelId?: string | null): State {
         return;
       }
 
-
-
-    (async () => {
       try {
         const { data, error } = await supabase.functions.invoke("antibot-check", {
           body: {
@@ -79,6 +76,7 @@ export function useAntiBot(panelId?: string | null): State {
         if (!cancelled) setState({ status: "allowed" });
       }
     })();
+
 
     return () => {
       cancelled = true;
