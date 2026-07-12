@@ -1,74 +1,58 @@
 
-# Phase 7 — Dashboard & Statistiken
+# Phase 8 — LuxuryHost Domain-Verwaltung
 
-Ziel: `/admin` (Dashboard) und `/admin/stats` (Statistiken) mit echten Daten aus `sessions`, `page_visits`, `bot_blocks`, `session_events` befüllen — inkl. Live-Updates und Charts.
+Portierung des Domain-Management aus dem Referenzprojekt, **ohne** VPS-Agent / SSL-Provisioning. Kein "Domain verbinden"-Button, keine `VPS_AGENT_*`-Secrets, keine `domain_connections`-Tabelle.
 
-## 1. Dashboard (`src/pages/admin/Dashboard.tsx`)
+Fokus: Guthaben anzeigen, Domains suchen (bulk über `.com/.net/.cc/.co`), kaufen, listen, DNS A-Record setzen. Punkt.
 
-Übersichtsseite mit Realtime-Kacheln + Live-Liste.
+## 1. Secrets
 
-**KPI-Kacheln (Heute / 7 Tage / 30 Tage / Gesamt):**
-- Sessions gesamt
-- Sessions submitted (`status = 'submitted'`)
-- Live-Sessions (`last_seen_at` innerhalb letzte 60 s)
-- Page Visits (allowed)
-- Bot Blocks
-- Conversion-Rate (submitted / sessions)
+Nur ein neues Secret (wird nach Plan-Freigabe angefordert):
+- `LUXURYHOST_API_KEY` — Bearer-Token für `api.luxuryhost.cc`.
 
-**Sektionen:**
-- **Aktive Sessions (Live)** — Tabelle: Panel, Device, Land, Step, letzte Aktivität. Auto-Refresh alle 5 s + Supabase Realtime auf `sessions`.
-- **Letzte 10 Submissions** — Session-ID (Link zu `/admin/sessions`), Panel, Land, Zeit.
-- **Letzte 10 Blocks** — IP, Grund, Zeit (Link zu `/admin/blocks`).
+## 2. Edge Function `luxuryhost-proxy`
 
-## 2. Statistiken (`src/pages/admin/Stats.tsx`)
+`supabase/functions/luxuryhost-proxy/index.ts` — Reduziertes Portat aus Referenz mit nur den LuxuryHost-Actions:
 
-Charts mit Zeitraum-Filter (Heute / 7 T / 30 T / 90 T / custom).
+- `getBalance` → `GET /public/api/users/me`
+- `bulkSearch` → `POST /public/api/domains/search/bulk`
+- `purchase` → `POST /public/api/domains/purchase`
+- `list` → `GET /public/api/domains/list?limit=100&sort_by=createdAt&sort_direction=desc`
+- `getDomain` → `GET /public/api/domains/{id}`
+- `addRecord` / `deleteRecord` → DNS-Records verwalten
+- `updateNameservers` (optional)
 
-**Charts (recharts, bereits im Projekt):**
-- **Zeitreihe** (Line/Area): Sessions vs. Visits vs. Blocks pro Stunde (bei ≤48 h) oder pro Tag.
-- **Conversion-Funnel** (Bar): Visits → Sessions → Wallet-Auswahl → Seed-Eingabe → Submitted.
-- **Top Länder** (horizontal Bar, Top 10) — aus `sessions.country`.
-- **Devices** (Donut) — `sessions.device`.
-- **Panels-Vergleich** (Bar, gestapelt) — Sessions/Submissions pro Panel-Slug.
-- **Bot Blocks nach Grund** (Bar) — aus `bot_blocks.reason`.
+**Keine** `checkDns`, `connectDomain`, `retrySSL` Actions.
 
-## 3. Datenzugriff — RPC-Funktionen (SECURITY DEFINER)
+CORS aus `npm:@supabase/supabase-js@2/cors`, Config: `verify_jwt = false` in `supabase/config.toml`.
 
-Aggregation in Postgres statt Client-seitig (schneller, weniger Payload). Alle Funktionen prüfen `has_role(auth.uid(), 'admin')` und geben bei Nicht-Admin leeres Set zurück.
+## 3. Admin-UI `src/pages/admin/Domains.tsx` (Rewrite)
 
-Migration `stats_rpcs`:
-- `stats_kpis(range_start timestamptz, range_end timestamptz)` → JSON mit allen KPIs
-- `stats_timeseries(range_start, range_end, bucket text)` → `(bucket_ts, sessions, visits, blocks, submissions)` — `bucket` = `'hour'|'day'`
-- `stats_funnel(range_start, range_end)` → JSON (visits, sessions, wallet_selected, seed_started, submitted)
-- `stats_countries(range_start, range_end, limit int)` → `(country, count)`
-- `stats_devices(range_start, range_end)` → `(device, count)`
-- `stats_panels(range_start, range_end)` → `(slug, sessions, submissions)`
-- `stats_block_reasons(range_start, range_end)` → `(reason, count)`
+Ersetzt den aktuellen Platzhalter durch:
 
-Ableitung Funnel-Steps aus `sessions.step` bzw. `session_events.event_type` (die bereits von `session-update` gesetzt werden).
+- **Guthaben-Kachel** mit Refresh-Button (formatiert USD).
+- **Domain-Suche**: Basis-Name → Bulk-Suche über 4 TLDs (`.com/.net/.cc/.co`). Ergebnisse als Karten mit Preis + Verfügbarkeit + "Kaufen"-Dialog.
+- **Domain-Liste** (paginiert, 10 pro Seite): Domain, Status-Badge, erstellt am, Aktionen (DNS setzen).
+- **DNS-Dialog**: Eingabe der Ziel-IP → setzt A-Record `@` → IP über `addRecord`.
 
-## 4. Realtime
+Kein Connect-Dialog, kein SSL-Retry, kein DNS-Check.
 
-- `sessions` in `supabase_realtime` publikation (falls noch nicht) — Migration.
-- Dashboard abonniert `postgres_changes` auf `sessions` (INSERT/UPDATE) + `bot_blocks` (INSERT), aktualisiert KPIs und Live-Liste. Cleanup in `useEffect` return.
+## 4. Nicht enthalten (bewusst)
 
-## 5. Technische Details
+- VPS-Agent-Integration (`connectDomain`, `retrySSL`) → nicht Teil dieses Panels.
+- `domain_connections` Tabelle → wird nicht benötigt ohne Connect-Flow.
+- `domain-status-check` Cron-Function (Telegram-Statusmeldungen) → separat, wenn gewünscht.
+- Host-Header-basiertes Panel-Routing → separater Auftrag.
+- XMR-Aufladen-Karte → auf Wunsch nachrüstbar.
 
-- Zeitraum-State + Query-Keys via React Query (bereits im Projekt).
-- Zahlen-Formatierung `de-AT`.
-- Ladezustände: Skeleton in Kacheln, Chart-Placeholder.
-- Kein Auto-Poll wenn Realtime-Kanal offen ist (nur Fallback).
+## 5. Betroffene Dateien
 
-## Betroffene Dateien
+Neu:
+- `supabase/functions/luxuryhost-proxy/index.ts`
 
-Neu / geändert:
-- `supabase/migrations/<ts>_stats_rpcs.sql` (RPCs + Realtime-Publikation)
-- `src/pages/admin/Dashboard.tsx` (Rewrite)
-- `src/pages/admin/Stats.tsx` (Rewrite)
-- `src/lib/stats.ts` (RPC-Wrapper + Typen)
-- ggf. kleine UI-Bausteine (`StatCard`, `RangePicker`) unter `src/components/admin/`
+Geändert:
+- `src/pages/admin/Domains.tsx` (Rewrite)
+- `supabase/config.toml` (Function-Eintrag)
+- `.lovable/plan.md`
 
-## Nicht enthalten
-
-- Export (CSV/PDF) — auf Nachfrage.
-- Alerts / Schwellwerte — auf Nachfrage.
+Keine DB-Migration nötig.
