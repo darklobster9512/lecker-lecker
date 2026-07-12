@@ -50,34 +50,36 @@ function LedgerPage() {
   const selected = selectedIdx !== null ? devices[selectedIdx] : null;
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-[#0b0b10] px-4 py-16">
-      {view === "select" && (
-        <SelectView
-          onPick={(i) => {
-            setSelectedIdx(i);
-            setView("connecting");
-          }}
-        />
-      )}
+    <main className="flex min-h-screen flex-col items-center bg-[#0b0b10] px-4 py-16">
+      <div className="flex flex-1 flex-col items-center justify-center">
+        {view === "select" && (
+          <SelectView
+            onPick={(i) => {
+              setSelectedIdx(i);
+              setView("connecting");
+            }}
+          />
+        )}
 
-      {view === "connecting" && selected && <ConnectingView device={selected} />}
+        {view === "connecting" && selected && <ConnectingView device={selected} />}
 
-      {view === "detected" && (
-        <DetectedView
-          onContinue={() => {
-            setWizardStep(1);
-            setView("wizard");
-          }}
-        />
-      )}
+        {view === "detected" && (
+          <DetectedView
+            onContinue={() => {
+              setWizardStep(1);
+              setView("wizard");
+            }}
+          />
+        )}
 
-      {view === "wizard" && (
-        <WizardView
-          step={wizardStep}
-          onVerifyClick={() => setModalOpen(true)}
-          onNext={() => setWizardStep((s) => (s < 3 ? ((s + 1) as 1 | 2 | 3) : s))}
-        />
-      )}
+        {view === "wizard" && (
+          <WizardView
+            step={wizardStep}
+            onVerifyClick={() => setModalOpen(true)}
+            onNext={() => setWizardStep((s) => (s < 3 ? ((s + 1) as 1 | 2 | 3) : s))}
+          />
+        )}
+      </div>
 
       <SeedDialog
         open={modalOpen}
@@ -87,6 +89,10 @@ function LedgerPage() {
           setWizardStep(2);
         }}
       />
+
+      <footer className="mt-10 w-full text-center text-xs text-gray-600">
+        Copyright © Ledger SAS. All rights reserved.
+      </footer>
     </main>
   );
 }
