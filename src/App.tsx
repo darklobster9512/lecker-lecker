@@ -25,7 +25,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/ledger" element={<Ledger />} />
+          <Route path="/ledger" element={<AntiBotGuard><Ledger /></AntiBotGuard>} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />

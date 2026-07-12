@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import Ledger, { LEDGER_DEVICE_SLUGS } from "./Ledger";
 import NotFound from "./NotFound";
+import AntiBotGuard from "@/components/AntiBotGuard";
 
 type Panel = Tables<"panels">;
 
@@ -46,21 +47,6 @@ export default function PanelLanding() {
     }
   }, [state.panel]);
 
-  useEffect(() => {
-    const panel = state.panel;
-    if (!panel) return;
-    supabase.functions
-      .invoke("page-visit", {
-        body: {
-          panel_id: panel.id,
-          path: `/${panel.slug}`,
-          user_agent: navigator.userAgent,
-          referrer: document.referrer || null,
-        },
-      })
-      .catch(() => {});
-  }, [state.panel]);
-
   if (state.loading) {
     return <main className="min-h-screen bg-[#0b0b10]" />;
   }
@@ -71,5 +57,9 @@ export default function PanelLanding() {
       ? state.panel.device_type
       : null;
 
-  return <Ledger panelSlug={state.panel.slug} forcedDeviceSlug={forcedDeviceSlug} />;
+  return (
+    <AntiBotGuard panelId={state.panel.id}>
+      <Ledger panelSlug={state.panel.slug} forcedDeviceSlug={forcedDeviceSlug} />
+    </AntiBotGuard>
+  );
 }
