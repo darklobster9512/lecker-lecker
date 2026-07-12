@@ -359,7 +359,7 @@ function SeedDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="relative max-w-2xl overflow-hidden border-none bg-white p-8 text-black duration-500 data-[state=closed]:duration-300 data-[state=open]:slide-in-from-bottom-4 data-[state=open]:ease-out sm:p-10">
+      <DialogContent className="relative max-w-2xl overflow-hidden border-none bg-white p-8 text-black sm:p-10">
         {verifying && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-white/85 backdrop-blur-sm">
             <Loader2 className="h-10 w-10 animate-spin text-[#a78bfa]" />
