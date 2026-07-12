@@ -12,6 +12,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ShieldOff } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 interface BlockRow {
   id: string;
@@ -46,6 +49,38 @@ export default function Blocks() {
   const [rows, setRows] = useState<BlockRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
+  const [antibotEnabled, setAntibotEnabled] = useState<boolean | null>(null);
+  const [savingToggle, setSavingToggle] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "antibot_enabled")
+        .maybeSingle();
+      const v = data?.value as unknown;
+      setAntibotEnabled(v === false || v === "false" ? false : true);
+    })();
+  }, []);
+
+  const toggleAntibot = async (next: boolean) => {
+    setSavingToggle(true);
+    const prev = antibotEnabled;
+    setAntibotEnabled(next);
+    const { error } = await supabase
+      .from("app_settings")
+      .update({ value: next })
+      .eq("key", "antibot_enabled");
+    setSavingToggle(false);
+    if (error) {
+      setAntibotEnabled(prev);
+      toast.error("Speichern fehlgeschlagen: " + error.message);
+    } else {
+      toast.success(next ? "Antibot aktiviert" : "Antibot deaktiviert");
+    }
+  };
+
 
   useEffect(() => {
     (async () => {
@@ -114,10 +149,34 @@ export default function Blocks() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <ShieldOff className="h-6 w-6 text-red-600" />
-        <h1 className="text-2xl font-semibold">Geblockte Requests</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <ShieldOff className="h-6 w-6 text-red-600" />
+          <h1 className="text-2xl font-semibold">Geblockte Requests</h1>
+        </div>
       </div>
+
+      <Card>
+        <CardContent className="flex items-center justify-between gap-4 py-4">
+          <div>
+            <Label htmlFor="antibot-toggle" className="text-base font-medium">
+              Antibot-System aktiv
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              {antibotEnabled === false
+                ? "Alle Anfragen werden durchgelassen. Es werden keine Blocks mehr geloggt."
+                : "IP/UA/Referer-Blocklisten und Headless-Checks sind aktiv."}
+            </p>
+          </div>
+          <Switch
+            id="antibot-toggle"
+            checked={antibotEnabled === true}
+            disabled={antibotEnabled === null || savingToggle}
+            onCheckedChange={toggleAntibot}
+          />
+        </CardContent>
+      </Card>
+
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {[

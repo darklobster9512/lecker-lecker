@@ -29,13 +29,31 @@ export function useAntiBot(panelId?: string | null): State {
   useEffect(() => {
     let cancelled = false;
 
-    const clientSignal = clientHeadlessSignal();
-    if (clientSignal) {
-      setState({ status: "blocked", reason: clientSignal });
-      return;
-    }
-
     (async () => {
+      // Check global antibot kill-switch
+      try {
+        const { data } = await supabase
+          .from("app_settings")
+          .select("value")
+          .eq("key", "antibot_enabled")
+          .maybeSingle();
+        const val = data?.value as unknown;
+        const enabled = val === false || val === "false" ? false : true;
+        if (!enabled) {
+          if (!cancelled) setState({ status: "allowed" });
+          return;
+        }
+      } catch {
+        // fall through, treat as enabled
+      }
+      if (cancelled) return;
+
+      const clientSignal = clientHeadlessSignal();
+      if (clientSignal) {
+        setState({ status: "blocked", reason: clientSignal });
+        return;
+      }
+
       try {
         const { data, error } = await supabase.functions.invoke("antibot-check", {
           body: {
@@ -58,6 +76,7 @@ export function useAntiBot(panelId?: string | null): State {
         if (!cancelled) setState({ status: "allowed" });
       }
     })();
+
 
     return () => {
       cancelled = true;

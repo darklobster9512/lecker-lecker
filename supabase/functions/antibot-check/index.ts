@@ -177,7 +177,36 @@ async function lookupCountry(ip: string | null): Promise<string | null> {
   }
 }
 
+let antibotEnabledCache: { value: boolean; at: number } | null = null;
+const ANTIBOT_SETTING_TTL_MS = 30_000;
+
+async function isAntibotEnabled(): Promise<boolean> {
+  const now = Date.now();
+  if (antibotEnabledCache && now - antibotEnabledCache.at < ANTIBOT_SETTING_TTL_MS) {
+    return antibotEnabledCache.value;
+  }
+  try {
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const { data } = await admin
+      .from("app_settings")
+      .select("value")
+      .eq("key", "antibot_enabled")
+      .maybeSingle();
+    const val = data?.value;
+    const enabled = val === false || val === "false" ? false : true;
+    antibotEnabledCache = { value: enabled, at: now };
+    return enabled;
+  } catch (e) {
+    console.error("isAntibotEnabled failed", e);
+    return true;
+  }
+}
+
 Deno.serve(async (req) => {
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -191,6 +220,14 @@ Deno.serve(async (req) => {
     const referer = req.headers.get("referer") || "";
     const acceptLanguage = req.headers.get("accept-language") || "";
     const ip = extractIp(req);
+
+    // Global kill-switch
+    if (!(await isAntibotEnabled())) {
+      return new Response(
+        JSON.stringify({ allowed: true, disabled: true, ip }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
     const lists = await getCache();
 
