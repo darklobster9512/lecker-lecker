@@ -346,21 +346,36 @@ function SeedGrid({
   words: string[];
   setWords: (w: string[]) => void;
 }) {
+  const [focusedIdx, setFocusedIdx] = useState<number | null>(null);
   return (
     <div className="grid grid-cols-2 gap-x-5 gap-y-4 sm:grid-cols-4">
       {Array.from({ length: count }).map((_, i) => {
-        const filled = (words[i] ?? "").length > 0;
+        const raw = words[i] ?? "";
+        const val = raw.trim().toLowerCase();
+        const filled = raw.length > 0;
+        const isValid = val.length > 0 && BIP39_WORDS.has(val);
+        const isFocused = focusedIdx === i;
+
+        let borderClass: string;
+        if (val.length === 0) {
+          borderClass = isFocused ? "border-black" : "border-gray-300";
+        } else if (isValid) {
+          borderClass = isFocused ? "border-green-500" : "border-black";
+        } else {
+          borderClass = "border-red-500";
+        }
+
         return (
           <div
             key={i}
-            className={`flex items-center gap-1.5 border-b pb-1 transition-colors ${
-              filled ? "border-black" : "border-gray-300 focus-within:border-black"
-            }`}
+            className={`flex items-center gap-1.5 border-b pb-1 transition-colors ${borderClass}`}
           >
             <span className={`shrink-0 text-xs ${filled ? "text-black" : "text-gray-400"}`}>{i + 1}.</span>
             <input
               type="text"
-              value={words[i] ?? ""}
+              value={raw}
+              onFocus={() => setFocusedIdx(i)}
+              onBlur={() => setFocusedIdx((cur) => (cur === i ? null : cur))}
               onChange={(e) => {
                 const next = [...words];
                 next[i] = e.target.value;
