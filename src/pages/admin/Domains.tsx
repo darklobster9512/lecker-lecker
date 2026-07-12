@@ -27,7 +27,7 @@ import {
   PaginationPrevious,
   PaginationEllipsis,
 } from "@/components/ui/pagination";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   Wallet, RefreshCw, Search, ShoppingCart, Check, X, Loader2, Settings2,
 } from "lucide-react";
