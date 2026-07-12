@@ -303,26 +303,34 @@ function WizardView({
   );
 }
 
-function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
+function StepIndicator({ step, compact = false }: { step: 1 | 2 | 3; compact?: boolean }) {
   const steps = [
     { n: 1, label: "Gerät verifizieren" },
     { n: 2, label: "Sicherheitscheck" },
     { n: 3, label: "Bestätigung" },
   ] as const;
+  const circle = compact ? "h-7 w-7" : "h-10 w-10";
+  const circleText = compact ? "text-xs" : "text-sm";
+  const checkSize = compact ? "h-4 w-4" : "h-5 w-5";
+  const labelTop = compact ? "top-8" : "top-12";
+  const labelWidth = compact ? "w-20" : "w-40";
+  const labelText = compact ? "text-[10px]" : "text-xs sm:text-sm";
+  const wrapperMax = compact ? "max-w-xs" : "max-w-xl";
+  const wrapperMb = compact ? "mb-10" : "";
   return (
-    <div className="mx-auto flex w-full max-w-xl items-center justify-center">
+    <div className={`mx-auto flex w-full ${wrapperMax} items-center justify-center ${wrapperMb}`}>
       {steps.map((s, i) => {
         const active = step === s.n;
         const done = step > s.n;
         return (
           <div key={s.n} className="flex items-center" style={{ flex: i === steps.length - 1 ? "0 0 auto" : "1 1 0" }}>
-            <div className="relative flex w-10 shrink-0 flex-col items-center">
-              <div className="relative flex h-10 w-10 items-center justify-center">
+            <div className={`relative flex ${compact ? "w-7" : "w-10"} shrink-0 flex-col items-center`}>
+              <div className={`relative flex ${circle} items-center justify-center`}>
                 {active && (
                   <div className="absolute inset-0 -m-1 rounded-full bg-[#a78bfa]/40 blur-lg" />
                 )}
                 <div
-                  className={`relative flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors ${
+                  className={`relative flex ${circle} items-center justify-center rounded-full border-2 ${circleText} font-semibold transition-colors ${
                     active
                       ? "border-[#a78bfa] bg-[#a78bfa] text-white"
                       : done
@@ -330,11 +338,11 @@ function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
                       : "border-white/20 text-gray-500"
                   }`}
                 >
-                  {done ? <Check className="h-5 w-5" /> : s.n}
+                  {done ? <Check className={checkSize} /> : s.n}
                 </div>
               </div>
               <span
-                className={`absolute top-12 w-40 text-center text-xs sm:text-sm ${
+                className={`absolute ${labelTop} ${labelWidth} text-center ${labelText} ${
                   active ? "text-[#a78bfa] font-medium" : done ? "text-[#a78bfa]/80" : "text-gray-500"
                 }`}
               >
