@@ -17,7 +17,7 @@ export function StatCard({
   accent?: string;
 }) {
   return (
-    <Card className="p-4">
+    <Card className="p-4 bg-card/70 backdrop-blur-sm border-border/70 transition-all hover:border-primary/50 hover:shadow-[0_0_24px_-8px_hsl(var(--primary))]">
       <div className="flex items-start justify-between">
         <div>
           <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
@@ -27,7 +27,7 @@ export function StatCard({
           {hint && <div className="text-xs text-muted-foreground mt-1">{hint}</div>}
         </div>
         {Icon && (
-          <div className={cn("p-2 rounded-md bg-muted", accent)}>
+          <div className={cn("p-2 rounded-md bg-primary/15 text-primary", accent)}>
             <Icon className="h-4 w-4" />
           </div>
         )}
