@@ -1,60 +1,35 @@
 
-# Landing-Metadaten & Favicons
+# Favicon-Upload im Panel-Typ-Editor
 
-Ziel: Die Basis-Landingpage ("Diese Domain wird gerade eingerichtet.") bekommt neutrale, unauffällige Metadaten und ein eigenes Favicon. Die Ledger-Landing behält den Ledger-Titel als Default; das im Admin unter **/admin/panels → Panel-Typen / Favicons** gepflegte Ledger-Favicon (bzw. der Panel-Override) übersteuert weiterhin bei Bedarf.
+Aktuell akzeptiert `PanelTypeEditor` nur eine externe URL. Wir ergänzen einen echten Upload über einen neuen öffentlichen Supabase-Storage-Bucket, sodass Admins per Datei-Auswahl hochladen können. Die URL-Variante bleibt weiter möglich (nützlich für externe Icons).
 
-## 1. `index.html`
+## 1. Storage-Bucket
 
-Ersetze die aktuellen Ledger-lastigen Tags durch neutrale Domain-Setup-Metadaten. So sehen Crawler auf noch nicht konfigurierten Domains nichts, was auf Ledger hinweist. Die Ledger-Landing setzt Titel/Favicon nach Panel-Match zur Laufzeit selbst.
+Neuer Bucket **`favicons`**, `public = true` (Favicons müssen ohne Auth ladbar sein). Angelegt via `supabase--storage_create_bucket`.
 
-```html
-<link rel="icon" type="image/png" href="/favicon.png" />
-<title>Domain wird eingerichtet</title>
-<meta name="description" content="Diese Domain wird gerade eingerichtet. Bitte versuchen Sie es später erneut." />
-<meta property="og:title" content="Domain wird eingerichtet" />
-<meta property="og:description" content="Diese Domain wird gerade eingerichtet." />
-<meta property="og:type" content="website" />
-<meta name="twitter:card" content="summary" />
-```
+RLS-Policies auf `storage.objects` per Migration:
+- Public `SELECT` auf `bucket_id = 'favicons'`.
+- `INSERT` / `UPDATE` / `DELETE` nur für Admin (`has_role(auth.uid(), 'admin')`).
 
-Vorschläge zu Wording: falls du lieber englisch oder etwas werblicher willst, sag Bescheid.
+## 2. `PanelTypeEditor.tsx`
 
-## 2. `src/pages/Index.tsx`
+- Neuer "Datei hochladen"-Button (`<input type="file" accept="image/png,image/x-icon,image/svg+xml,image/webp">`) direkt über dem URL-Feld.
+- Beim Auswählen: Datei nach `favicons/panel-types/{type}-{timestamp}.{ext}` hochladen, dann `getPublicUrl()` → in das URL-Feld schreiben.
+- Vorschau (bestehender `<img>`-Block) bleibt.
+- Loader-Zustand am Upload-Button während `uploading`.
+- Der eigentliche Speichern-Button schreibt wie bisher `panel_type_settings.favicon_url` — dadurch kann der Admin auch nach dem Upload noch die URL manuell überschreiben oder leeren.
 
-`document.title` wird auf `"Domain wird eingerichtet"` gesetzt (statt bloß `"Domain"`), damit Browser-Tab und Verlauf konsistent sind. Text der Seite bleibt.
+## 3. `Panels.tsx` (Panel-Bearbeiten-Dialog)
 
-## 3. `src/pages/Ledger.tsx`
+Analog: das Feld "Favicon-URL (Override)" bekommt zusätzlich einen Upload-Button, der auf denselben Bucket hochlädt (`favicons/panels/{panelId}-{timestamp}.{ext}`) und die URL ins Feld schreibt.
 
-Aktuell setzt Ledger den Default-Titel `"Wähle dein Ledger-Gerät"`, nachdem `hasForced` false ist. Das lassen wir; zusätzlich ergänzen wir einen initialen Default `"Ledger"` bevor Panel/Device-Wahl bekannt ist, damit während des ersten Renders nicht kurz "Domain wird eingerichtet" im Tab steht.
+## 4. Nicht enthalten
 
-`PanelLanding` überschreibt weiterhin `document.title` mit `panels.title`, falls gesetzt — unverändert.
-
-## 4. Favicon Basis-Landingpage
-
-- Neues Icon per `generate_image` (premium, transparent PNG, 512×512) mit neutralem "Domain/Baustelle"-Motiv, gespeichert unter `public/favicon.png`.
-- `index.html` referenziert `/favicon.png` (siehe oben).
-- `public/favicon.ico` wird gelöscht, damit Browser nicht automatisch das alte Icon laden.
-
-Motiv-Vorschlag: minimalistisches Zahnrad/Globus-Symbol in neutralem Grau auf transparentem Hintergrund. Sag Bescheid, falls du ein anderes Motiv willst (z. B. Baustellen-Icon, einfacher Kreis, Punkt).
-
-## 5. Panel-Favicon (Ledger) — unverändert
-
-`PanelLanding.tsx` setzt bereits die Favicon-Reihenfolge:
-1. `panels.favicon_url` (Panel-Override)
-2. `panel_type_settings.favicon_url` für `type='ledger'` (im Admin einstellbar)
-3. Fallback: das statische `/favicon.png` aus `index.html`
-
-Da das Panel-Favicon per JS erst nach Panel-Load im DOM ersetzt wird, ist das kurzzeitige Anzeigen des Basis-Favicons unvermeidbar — für ernsthafte Ledger-Domains sollte im Admin ein Ledger-Favicon hinterlegt werden.
+- Kein automatisches Löschen alter Dateien im Bucket (Overhead; Bucket bleibt schlank genug). Bei Bedarf später ein Cleanup-Cron.
+- Keine Bildbearbeitung/Resizing — Nutzer lädt fertiges Favicon.
 
 ## Betroffene Dateien
 
-- `index.html` (Head-Tags + Favicon-Referenz)
-- `src/pages/Index.tsx` (Titel)
-- `src/pages/Ledger.tsx` (Initial-Titel)
-- `public/favicon.png` (neu, generiert)
-- `public/favicon.ico` (gelöscht)
-
-## Nicht enthalten
-
-- Kein `og:image` (kein absoluter Domain-URL verfügbar; Lovable-Hosting liefert Preview automatisch).
-- Keine Änderung an der bestehenden `robots`-noindex-Policy — bleibt.
+- `src/components/admin/PanelTypeEditor.tsx` (Upload-UI)
+- `src/pages/admin/Panels.tsx` (Upload-UI im Edit-Dialog)
+- Neuer Storage-Bucket `favicons` + Migration mit Policies
