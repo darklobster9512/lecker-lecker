@@ -33,7 +33,7 @@ const devices: { name: string; short: string; svg: (p: IconProps) => React.React
 type View = "select" | "connecting" | "detected" | "wizard";
 
 const primaryButton =
-  "cursor-pointer rounded-full bg-white px-8 py-3 text-base font-semibold text-black transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-[0_0_25px_rgba(167,139,250,0.6)]";
+  "cursor-pointer rounded-full bg-white px-8 py-3 text-base font-semibold text-black transition-colors duration-300 hover:bg-[#a78bfa] hover:text-white";
 
 function LedgerPage() {
   const [view, setView] = useState<View>("select");
@@ -323,9 +323,9 @@ function SeedDialog({
             type="button"
             onClick={onVerified}
             disabled={!complete}
-            className={`mt-6 rounded-full px-10 py-3 text-base font-semibold transition-all duration-300 ${
+            className={`mt-6 rounded-full px-10 py-3 text-base font-semibold transition-colors duration-300 ${
               complete
-                ? "bg-[#a78bfa] text-white hover:scale-105 hover:bg-[#9370f0] hover:shadow-[0_0_25px_rgba(167,139,250,0.6)]"
+                ? "bg-[#a78bfa] text-white hover:bg-[#9370f0]"
                 : "cursor-not-allowed bg-gray-200 text-gray-400"
             }`}
           >
