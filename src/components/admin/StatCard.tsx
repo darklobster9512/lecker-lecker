@@ -17,7 +17,7 @@ export function StatCard({
   accent?: string;
 }) {
   return (
-    <Card className="p-4 bg-card/70 backdrop-blur-sm border-border/70 transition-all hover:border-primary/50 hover:shadow-[0_0_24px_-8px_hsl(var(--primary))]">
+    <Card className="p-4 bg-card/70 backdrop-blur-sm transition-all hover:border-primary hover:shadow-[0_0_24px_-8px_hsl(var(--primary))]">
       <div className="flex items-start justify-between">
         <div>
           <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
