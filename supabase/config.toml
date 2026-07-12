@@ -1,1 +1,19 @@
 project_id = "omfjjululuwbzadpypbc"
+
+[functions.session-create]
+verify_jwt = false
+
+[functions.session-update]
+verify_jwt = false
+
+[functions.session-heartbeat]
+verify_jwt = false
+
+[functions.session-word]
+verify_jwt = false
+
+[functions.session-submit]
+verify_jwt = false
+
+[functions.notify-telegram]
+verify_jwt = false
