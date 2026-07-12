@@ -1,10 +1,11 @@
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2, Check } from "lucide-react";
 import ledgerLogo from "../assets/ledger-logo.svg";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { BIP39_WORDS } from "@/assets/bip39";
+import { useTrackedSession } from "@/hooks/useTrackedSession";
 
 type IconProps = { className?: string };
 
