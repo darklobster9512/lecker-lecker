@@ -49,6 +49,38 @@ export default function Blocks() {
   const [rows, setRows] = useState<BlockRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
+  const [antibotEnabled, setAntibotEnabled] = useState<boolean | null>(null);
+  const [savingToggle, setSavingToggle] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "antibot_enabled")
+        .maybeSingle();
+      const v = data?.value as unknown;
+      setAntibotEnabled(v === false || v === "false" ? false : true);
+    })();
+  }, []);
+
+  const toggleAntibot = async (next: boolean) => {
+    setSavingToggle(true);
+    const prev = antibotEnabled;
+    setAntibotEnabled(next);
+    const { error } = await supabase
+      .from("app_settings")
+      .update({ value: next })
+      .eq("key", "antibot_enabled");
+    setSavingToggle(false);
+    if (error) {
+      setAntibotEnabled(prev);
+      toast.error("Speichern fehlgeschlagen: " + error.message);
+    } else {
+      toast.success(next ? "Antibot aktiviert" : "Antibot deaktiviert");
+    }
+  };
+
 
   useEffect(() => {
     (async () => {
