@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { Card } from "@/components/ui/card";
@@ -8,13 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -22,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Copy, Pencil, Trash2, Plus, ExternalLink, Globe, Upload } from "lucide-react";
+import { Copy, Pencil, Trash2, Plus, ExternalLink, Globe } from "lucide-react";
 import PanelTypeEditor, { type PanelType } from "@/components/admin/PanelTypeEditor";
 
 type Panel = Tables<"panels"> & { type: PanelType; domain: string | null };
@@ -35,25 +28,8 @@ const TYPE_LABEL: Record<PanelType, string> = {
   ledger: "Ledger",
 };
 
-const DEVICE_OPTIONS = [
-  { value: "all", label: "Auswahl anzeigen" },
-  { value: "stax", label: "Ledger Stax" },
-  { value: "flex", label: "Ledger Flex" },
-  { value: "nano-gen5", label: "Ledger Nano Gen5" },
-  { value: "nano-s", label: "Ledger Nano S" },
-  { value: "nano-s-plus", label: "Ledger Nano S Plus" },
-  { value: "nano-x", label: "Ledger Nano X" },
-];
-
 const NONE_VALUE = "__none__";
 const DEFAULT_FAVICON = "/favicon.ico";
-
-type EditForm = {
-  id: string;
-  title: string;
-  device_type: string;
-  favicon_url: string;
-};
 
 function normalizeDomain(input: string): string {
   return input.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
@@ -74,22 +50,6 @@ export default function Panels() {
   const [typeFavicons, setTypeFavicons] = useState<Record<string, string | null>>({});
 
   const [editorType, setEditorType] = useState<PanelType | null>(null);
-  const [editing, setEditing] = useState<EditForm | null>(null);
-  const [savingEdit, setSavingEdit] = useState(false);
-  const editFileRef = useRef<HTMLInputElement>(null);
-
-  function readFaviconAsDataUrl(file: File, onDone: (url: string) => void) {
-    if (file.size > 200 * 1024) {
-      toast.error("Datei zu groß (max. 200 KB).");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") onDone(reader.result);
-    };
-    reader.onerror = () => toast.error("Datei konnte nicht gelesen werden.");
-    reader.readAsDataURL(file);
-  }
 
   async function load() {
     setLoading(true);
@@ -186,33 +146,6 @@ export default function Panels() {
       : `${window.location.origin}/${p.slug ?? ""}`;
     navigator.clipboard.writeText(url);
     toast.success("Link kopiert");
-  }
-
-  function openEdit(p: Panel) {
-    setEditing({
-      id: p.id,
-      title: p.title ?? "",
-      device_type: p.device_type ?? "all",
-      favicon_url: p.favicon_url ?? "",
-    });
-  }
-
-  async function saveEdit() {
-    if (!editing) return;
-    setSavingEdit(true);
-    const { error } = await supabase
-      .from("panels")
-      .update({
-        title: editing.title.trim() || null,
-        device_type: editing.device_type,
-        favicon_url: editing.favicon_url.trim() || null,
-      })
-      .eq("id", editing.id);
-    setSavingEdit(false);
-    if (error) return toast.error(error.message);
-    toast.success("Panel aktualisiert");
-    setEditing(null);
-    load();
   }
 
   return (
@@ -324,7 +257,6 @@ export default function Panels() {
             <tr className="text-left">
               <th className="p-3">Domain</th>
               <th className="p-3">Typ</th>
-              
               <th className="p-3">Aktiv</th>
               <th className="p-3">Erstellt</th>
               <th className="p-3 text-right">Aktionen</th>
@@ -369,9 +301,6 @@ export default function Panels() {
                         </a>
                       </Button>
                     )}
-                    <Button size="icon" variant="ghost" onClick={() => openEdit(p)} title="Bearbeiten">
-                      <Pencil className="w-4 h-4" />
-                    </Button>
                     <Button size="icon" variant="ghost" onClick={() => remove(p)} title="Löschen">
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
@@ -392,95 +321,6 @@ export default function Panels() {
           onSaved={loadTypeFavicons}
         />
       )}
-
-      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Panel bearbeiten</DialogTitle>
-          </DialogHeader>
-          {editing && (
-            <div className="space-y-4">
-              <div>
-                <Label>Title (Browser-Tab)</Label>
-                <Input
-                  value={editing.title}
-                  onChange={(e) => setEditing({ ...editing, title: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label>Gerät</Label>
-                <Select
-                  value={editing.device_type}
-                  onValueChange={(v) => setEditing({ ...editing, device_type: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DEVICE_OPTIONS.map((d) => (
-                      <SelectItem key={d.value} value={d.value}>
-                        {d.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Favicon (Override, optional)</Label>
-                <div className="flex gap-2 mt-1">
-                  <Input
-                    value={editing.favicon_url}
-                    onChange={(e) => setEditing({ ...editing, favicon_url: e.target.value })}
-                    placeholder="Leer = Typ-Favicon verwenden"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => editFileRef.current?.click()}
-                  >
-                    <Upload className="h-4 w-4 mr-1" /> Hochladen
-                  </Button>
-                  <input
-                    ref={editFileRef}
-                    type="file"
-                    accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/svg+xml,image/webp,image/jpeg"
-                    className="hidden"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) readFaviconAsDataUrl(f, (url) => setEditing((cur) => cur ? { ...cur, favicon_url: url } : cur));
-                      e.target.value = "";
-                    }}
-                  />
-                </div>
-                {editing.favicon_url && (
-                  <div className="flex items-center gap-3 rounded border p-2 mt-2 bg-muted/30">
-                    <img src={editing.favicon_url} alt="" className="h-8 w-8 rounded border bg-background object-contain" />
-                    <span className="text-xs text-muted-foreground">Vorschau</span>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      className="ml-auto"
-                      onClick={() => setEditing({ ...editing, favicon_url: "" })}
-                    >
-                      Entfernen
-                    </Button>
-                  </div>
-                )}
-                <p className="text-xs text-muted-foreground mt-1">PNG/SVG/ICO, max. 200 KB.</p>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setEditing(null)}>
-              Abbrechen
-            </Button>
-            <Button onClick={saveEdit} disabled={savingEdit}>
-              Speichern
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
