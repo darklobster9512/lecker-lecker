@@ -1,4 +1,5 @@
 import { corsHeaders, jsonResponse, serviceClient, verifyToken } from "../_shared/session.ts";
+import { sendSessionCreated } from "../_shared/telegram.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -11,6 +12,14 @@ Deno.serve(async (req) => {
     const supabase = serviceClient();
     const check = await verifyToken(supabase, session_id, access_token);
     if (!check.ok) return jsonResponse({ error: "unauthorized" }, 401);
+
+    // Load current device to detect first-time device selection
+    const { data: current } = await supabase
+      .from("sessions")
+      .select("device")
+      .eq("id", session_id)
+      .maybeSingle();
+    const wasDeviceUnset = !current?.device;
 
     const patch: Record<string, unknown> = { last_seen_at: new Date().toISOString() };
     if (typeof step === "string") patch.step = step;
@@ -25,6 +34,13 @@ Deno.serve(async (req) => {
       event_type: "updated",
       payload: patch,
     });
+
+    // Fire "Session gestartet" Telegram notification when a device is set for the first time
+    if (wasDeviceUnset && typeof device === "string" && device.length > 0) {
+      sendSessionCreated(session_id).catch((e) =>
+        console.error("telegram created send failed", e),
+      );
+    }
 
     return jsonResponse({ ok: true });
   } catch (e) {
