@@ -411,7 +411,7 @@ function SeedDialog({
     }, 300);
   }
 
-  const complete = words.length > 0 && words.every((w) => w.trim().length > 0);
+  const complete = words.length > 0 && words.every((w) => BIP39_WORDS.has(w.trim().toLowerCase()));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
