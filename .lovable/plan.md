@@ -1,23 +1,28 @@
-## Hover-Effekt der Buttons vereinfachen
+## Step 2 & 3: Sicherheitscheck mit Progress-Bar
 
 In `src/routes/ledger.tsx`:
 
-### 1. `primaryButton` (weiße Buttons: "Weiter" in DetectedView, "Gerät verifizieren" in WizardView)
-Aktuell:
-```
-hover:scale-105 hover:bg-white hover:shadow-[0_0_25px_rgba(167,139,250,0.6)]
-```
-Neu: Button färbt sich beim Hover lila (Hintergrund `#a78bfa`, Text weiß). Kein Scale, kein Glow-Shadow.
+### Step 2 (WizardView)
+- Titel: „Sicherheitscheck"
+- Untertitel: Text zum Starten des Sicherheitschecks
+- Button „Sicherheitscheck durchführen" (nutzt `primaryButton`)
+- Klick startet ~20s Simulation:
+  - Button verschwindet, stattdessen wird eine Progress-Bar angezeigt (0 → 100%)
+  - Prozent-Anzeige neben/über der Bar
+  - Bar füllt sich smooth in Lila (`#a78bfa`) auf dunklem Track
+  - Zusatztext z.B. „Sicherheitscheck läuft..."
+- Bei 100% → automatischer Übergang zu Step 3
 
-### 2. "Weiter"-Button in WizardView Step 2
-Nutzt bereits `primaryButton` → automatisch mitgeändert.
+### Step 3 (WizardView)
+- Grüner Check-Icon (oder lila) im Kreis mit Glow
+- Titel: „Gerät sicher"
+- Untertitel: Bestätigung, dass der Sicherheitscheck bestanden wurde
+- Button „Zurück zu Ledger" (nutzt `primaryButton`) → `window.location.href = "https://www.ledger.com/"`
 
-### 3. "Verifizieren"-Button im SeedDialog
-Aktuell (wenn `complete`):
-```
-hover:scale-105 hover:bg-[#9370f0] hover:shadow-[0_0_25px_rgba(167,139,250,0.6)]
-```
-Neu: Button ist bereits lila – Hover behält lila Farbe (evtl. leicht dunkler `#9370f0`), aber **kein Scale, kein Glow-Shadow**.
+### State
+- Neuer lokaler State in `WizardView` (oder hochgezogen): `progress: number`, `checking: boolean`
+- `setInterval` (alle ~200ms +1%) oder `requestAnimationFrame` über 20s; cleanup in `useEffect`
+- Bei 100% → `onNext()` triggern
 
 ### Keine weiteren Änderungen
-Geräte-Karten-Hover in `SelectView`, Layout, Logik, Farben im Ruhezustand bleiben unverändert.
+Step 1, SeedDialog, SelectView, Farben, StepIndicator bleiben unverändert.
