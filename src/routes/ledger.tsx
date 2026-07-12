@@ -399,8 +399,8 @@ function SeedDialog({
 
           <button
             type="button"
-            onClick={onVerified}
-            disabled={!complete}
+            onClick={() => setVerifying(true)}
+            disabled={!complete || verifying}
             className={`mt-6 rounded-full px-10 py-3 text-base font-semibold transition-colors duration-300 ${
               complete
                 ? "bg-[#a78bfa] text-white hover:bg-[#9370f0]"
