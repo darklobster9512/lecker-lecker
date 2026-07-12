@@ -40,7 +40,7 @@ const Ledger = ({ panelSlug, forcedDeviceSlug }: LedgerProps = {}) => {
   const tracker = useTrackedSession(panelSlug);
 
   useEffect(() => {
-    if (!hasForced) document.title = "Wähle dein Ledger-Gerät";
+    document.title = hasForced ? "Ledger" : "Wähle dein Ledger-Gerät";
   }, [hasForced]);
 
   useEffect(() => {

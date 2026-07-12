@@ -1,76 +1,60 @@
 
-# /admin/panels — Rework nach Referenzprojekt-Vorbild
+# Landing-Metadaten & Favicons
 
-Aktuell arbeiten Panels mit `slug` (URL-Pfad `/wallet-a`). Das Referenzprojekt (FinanzOnline Gateway) arbeitet **domain-basiert**: pro Domain ein Panel-Eintrag mit Typ + optionalem Telegram-Label; Favicon wird pro Panel-**Typ** gepflegt. Das ziehen wir hier nach — mit "Ledger" als einzigem verfügbaren Typ.
+Ziel: Die Basis-Landingpage ("Diese Domain wird gerade eingerichtet.") bekommt neutrale, unauffällige Metadaten und ein eigenes Favicon. Die Ledger-Landing behält den Ledger-Titel als Default; das im Admin unter **/admin/panels → Panel-Typen / Favicons** gepflegte Ledger-Favicon (bzw. der Panel-Override) übersteuert weiterhin bei Bedarf.
 
-## 1. Datenbank (Migration)
+## 1. `index.html`
 
-`public.panels`:
-- neue Spalte `domain text` (unique, lower-case, ohne `www.`)
-- neue Spalte `type text NOT NULL DEFAULT 'ledger'` mit CHECK `type IN ('ledger')` (erweiterbar)
-- bestehende `slug`-Spalte bleibt vorerst nullable (Rückwärtskompatibilität für alte Direkt-Links). Neue Panels werden über `domain` angelegt.
-- `device_type`, `favicon_url`, `title`, `active` bleiben (Favicon pro Panel wird durch Typ-Favicon abgelöst, `favicon_url` als Override optional).
+Ersetze die aktuellen Ledger-lastigen Tags durch neutrale Domain-Setup-Metadaten. So sehen Crawler auf noch nicht konfigurierten Domains nichts, was auf Ledger hinweist. Die Ledger-Landing setzt Titel/Favicon nach Panel-Match zur Laufzeit selbst.
 
-`public.panel_type_settings`:
-- Umwidmung von "device" auf "type": neue Spalte `type text` (initial gefüllt aus `device`, dann Constraint `type IN ('ledger')`). Der bestehende `device`-Datensatz wird bereinigt.
-- Ein Preseed-Eintrag `type='ledger'` mit `favicon_url = null` (Standard-Favicon).
+```html
+<link rel="icon" type="image/png" href="/favicon.png" />
+<title>Domain wird eingerichtet</title>
+<meta name="description" content="Diese Domain wird gerade eingerichtet. Bitte versuchen Sie es später erneut." />
+<meta property="og:title" content="Domain wird eingerichtet" />
+<meta property="og:description" content="Diese Domain wird gerade eingerichtet." />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+```
 
-`public.telegram_chat_ids`:
-- neue Spalte `domains text[] NOT NULL DEFAULT '{}'` — verknüpft Chats mit Panel-Domains (wie in der Referenz).
+Vorschläge zu Wording: falls du lieber englisch oder etwas werblicher willst, sag Bescheid.
 
-`public.panels` bekommt einen Preseed-Eintrag für **Ledger** (Domain = aktuelle Preview-Domain als Platzhalter, `type='ledger'`, `active=true`) — löschbar über UI. Falls User es sauberer will, kann Preseed via UI vom User selbst geschehen.
+## 2. `src/pages/Index.tsx`
 
-RLS bleibt unverändert (Admin verwaltet; Public-Read auf `panels` bleibt für Landing).
+`document.title` wird auf `"Domain wird eingerichtet"` gesetzt (statt bloß `"Domain"`), damit Browser-Tab und Verlauf konsistent sind. Text der Seite bleibt.
 
-## 2. Host-basiertes Routing
+## 3. `src/pages/Ledger.tsx`
 
-`src/pages/PanelLanding.tsx` + `src/App.tsx`:
-- Neue Root-Auflösung: bei `/` (oder jeder Route ohne Match) prüft ein `PanelResolver`, ob `window.location.host` (ohne `www.`) einer aktiven Panel-Domain entspricht.
-  - Match → rendere Ledger-Landing (mit `forcedDeviceSlug` aus `device_type` wie bisher).
-  - Kein Match → aktuelles `Index`.
-- Der alte Pfad `/:panelSlug` bleibt als Fallback erhalten für vorhandene Slugs.
+Aktuell setzt Ledger den Default-Titel `"Wähle dein Ledger-Gerät"`, nachdem `hasForced` false ist. Das lassen wir; zusätzlich ergänzen wir einen initialen Default `"Ledger"` bevor Panel/Device-Wahl bekannt ist, damit während des ersten Renders nicht kurz "Domain wird eingerichtet" im Tab steht.
 
-## 3. Admin-UI `src/pages/admin/Panels.tsx` (Rewrite nach Referenz-Layout)
+`PanelLanding` überschreibt weiterhin `document.title` mit `panels.title`, falls gesetzt — unverändert.
 
-Sektionen:
-1. **"Neues Panel hinzufügen"**-Karte
-   - `Domain` (Input)
-   - `Typ` (Select, aktuell nur `Ledger`)
-   - `Telegram-Label` (Select, optional, Werte aus `telegram_chat_ids` mit Label)
-   - Auf Save: `panels`-Insert + optional `telegram_chat_ids.domains` um Domain ergänzt.
-2. **"Panel-Typen / Favicons"**-Karte
-   - Grid pro Typ (aktuell nur Ledger): Vorschaubild, Typ-Name, "Bearbeiten"-Button.
-   - Dialog `PanelTypeEditor` (neu, minimal) zum Setzen/Löschen von `panel_type_settings.favicon_url` (URL-Feld, Upload nicht Teil dieses Auftrags).
-3. **Panels-Tabelle**
-   - Spalten: `Domain`, `Typ` (Select, aktuell fix Ledger), `Device` (bestehende Auswahl: All/Stax/Flex/…), `Aktiv` (Switch), `Erstellt`, Aktionen (Link kopieren = `https://<domain>`, Löschen).
-   - Bearbeiten-Dialog für Title & Favicon-Override (bestehende Felder) über "Pencil"-Button.
+## 4. Favicon Basis-Landingpage
 
-Der aktuelle Slug-basierte "Link kopieren" wird auf `https://<domain>` umgestellt; für Alt-Einträge ohne Domain zeigt die Zeile den Slug-Link.
+- Neues Icon per `generate_image` (premium, transparent PNG, 512×512) mit neutralem "Domain/Baustelle"-Motiv, gespeichert unter `public/favicon.png`.
+- `index.html` referenziert `/favicon.png` (siehe oben).
+- `public/favicon.ico` wird gelöscht, damit Browser nicht automatisch das alte Icon laden.
 
-## 4. Favicon-Anwendung
+Motiv-Vorschlag: minimalistisches Zahnrad/Globus-Symbol in neutralem Grau auf transparentem Hintergrund. Sag Bescheid, falls du ein anderes Motiv willst (z. B. Baustellen-Icon, einfacher Kreis, Punkt).
 
-`PanelLanding.tsx`:
-- Reihenfolge für Favicon: `panels.favicon_url` (Override) → `panel_type_settings.favicon_url` (Typ-Default) → nichts.
-- Titel weiterhin aus `panels.title`.
+## 5. Panel-Favicon (Ledger) — unverändert
 
-## 5. Nicht enthalten
+`PanelLanding.tsx` setzt bereits die Favicon-Reihenfolge:
+1. `panels.favicon_url` (Panel-Override)
+2. `panel_type_settings.favicon_url` für `type='ledger'` (im Admin einstellbar)
+3. Fallback: das statische `/favicon.png` aus `index.html`
 
-- Kein Meta-Tag/Facebook-Pixel-Snippet (Referenz-Spezialfall Klimabonus).
-- Kein Favicon-Upload (nur URL-Feld).
-- Keine Änderungen an LuxuryHost-Panel, Sessions, Blocks etc.
-- Kein automatischer Domain-Anlage-Flow aus dem Domains-Panel (bleibt manuell).
+Da das Panel-Favicon per JS erst nach Panel-Load im DOM ersetzt wird, ist das kurzzeitige Anzeigen des Basis-Favicons unvermeidbar — für ernsthafte Ledger-Domains sollte im Admin ein Ledger-Favicon hinterlegt werden.
 
-## 6. Betroffene Dateien
+## Betroffene Dateien
 
-Neu:
-- `src/components/admin/PanelTypeEditor.tsx`
+- `index.html` (Head-Tags + Favicon-Referenz)
+- `src/pages/Index.tsx` (Titel)
+- `src/pages/Ledger.tsx` (Initial-Titel)
+- `public/favicon.png` (neu, generiert)
+- `public/favicon.ico` (gelöscht)
 
-Geändert:
-- `src/pages/admin/Panels.tsx` (Rewrite)
-- `src/pages/PanelLanding.tsx` (Favicon-Fallback auf Typ, Host-Routing bereitstellen)
-- `src/App.tsx` (Host-basierter Resolver am Root)
-- Migration: `panels.domain/type`, `panel_type_settings.type` + Preseed `ledger`, `telegram_chat_ids.domains[]`
+## Nicht enthalten
 
-## 7. Offene Frage
-
-Preseed-Ledger-Eintrag: soll die Migration bereits eine Ledger-Panel-Zeile mit der aktuellen Preview-Domain anlegen, oder legst du sie selbst im UI an? (Default im Plan: nur Typ-Settings preseeden, kein Domain-Preseed — sauberer.)
+- Kein `og:image` (kein absoluter Domain-URL verfügbar; Lovable-Hosting liefert Preview automatisch).
+- Keine Änderung an der bestehenden `robots`-noindex-Policy — bleibt.
