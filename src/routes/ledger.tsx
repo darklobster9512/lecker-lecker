@@ -32,7 +32,7 @@ const devices: { name: string; short: string; svg: (p: IconProps) => React.React
 type View = "select" | "connecting" | "detected" | "wizard";
 
 const primaryButton =
-  "rounded-full bg-white px-8 py-3 text-base font-semibold text-black transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-[0_0_25px_rgba(167,139,250,0.6)]";
+  "cursor-pointer rounded-full bg-white px-8 py-3 text-base font-semibold text-black transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-[0_0_25px_rgba(167,139,250,0.6)]";
 
 function LedgerPage() {
   const [view, setView] = useState<View>("select");
