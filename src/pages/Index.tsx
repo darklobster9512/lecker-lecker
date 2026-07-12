@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 const Index = () => {
   useEffect(() => {
-    document.title = "Domain";
+    document.title = "Domain wird eingerichtet";
   }, []);
 
   return (
