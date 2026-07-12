@@ -1,41 +1,32 @@
-## Ursache
+## Ziel
+Der "Aktiv"-Toggle in `/admin/panels` soll wirklich steuern, was Besucher der Domain sehen:
 
-Die Card-Outlines im Admin-Panel bleiben hell/weiß, obwohl `.admin-theme` `--border` auf lila setzt. Empirisch verifiziert per Playwright innerhalb `.admin-theme`:
+- **Aktiv** → Domain-Root `/` leitet auf `/ledger` weiter (das echte Ledger-Panel).
+- **Inaktiv** → Domain-Root bleibt auf `/` und zeigt weiterhin die neutrale Landingpage (`Index.tsx`), keine Weiterleitung.
 
-```
---border          = oklch(0.65 0.22 300 / 28%)   ← lila (korrekt)
---color-border    = oklch(0.929 0.013 255.508)   ← hell (falsch, aus :root)
-computed border   = oklch(0.929 0.013 255.508)   ← hell
-```
+## Ist-Zustand
 
-Grund: `@theme inline { --color-border: var(--border) }` setzt `--color-border` nur auf `:root`. Der Wert wird dort einmal aufgelöst (zum hellen `:root`-`--border`) und ist damit für alle Nachfahren fix — auch innerhalb `.admin-theme`. Deshalb greifen Tailwind-Utilities wie `border`, `border-border`, `border-t` etc. auf den hellen Wert zurück. (`bg-card` sieht dunkel aus, weil `--card` direkt als Farbwert benutzt wird, nicht via `--color-*`.)
+`src/pages/PanelLanding.tsx` wird für den Domain-Root gerendert und rendert bei `active=true` das `<Ledger>`-Panel inline (URL bleibt `/`), bei `active=false` fällt es auf `<Index />` zurück. Der Toggle wirkt heute schon auf den Inhalt, aber:
 
-Die Sidebar wirkt "richtig", weil dort explizit gesetzte Klassen greifen — die Card-Ränder auf den Reiter-Seiten (Dashboard, Stats, Blocks, Panels, Domains, Telegram, Sessions) nicht.
+1. Es gibt keine echte Weiterleitung auf `/ledger` — die URL bleibt bei `/`.
+2. Der Nutzer möchte explizit die URL-Weiterleitung.
 
-## Fix
+Der DB-Toggle selbst (`toggleActive` in `src/pages/admin/Panels.tsx`) funktioniert bereits und schreibt `active` in `panels`.
 
-`src/styles.css` — im `.admin-theme` Scope zusätzlich die abgeleiteten `--color-*` Tokens neu binden, damit sie den lila Wert im Scope auflösen:
+## Änderung
 
-```css
-.admin-theme {
-  /* … bestehende Variablen bleiben … */
-  --color-border: oklch(0.65 0.22 300 / 28%);
-  --color-sidebar-border: oklch(0.65 0.22 300 / 22%);
-  --color-input: oklch(1 0 0 / 12%);
-  --color-ring: oklch(0.65 0.22 300);
-}
-```
+**`src/pages/PanelLanding.tsx`** (nur im `host`-Modus, also beim Domain-Root, nicht im `/:panelSlug`-Modus):
 
-Damit greifen `border`, `border-border`, `divide-y`, `border-t`, `border-b` in **allen** Admin-Cards und Tabellen automatisch auf die lila Border zurück — ohne Komponenten einzeln zu ändern.
+- Wenn ein Panel gefunden wird **und `active = true`** → per `<Navigate to="/ledger" replace />` auf die `/ledger`-Route umleiten (die bereits mit `AntiBotGuard` + `Ledger` gemountet ist und identisch zur alten Inline-Darstellung wirkt).
+- Wenn `active = false` oder kein Panel für die Domain existiert → weiterhin `<Index />` anzeigen, keine Weiterleitung.
+- `favicon` / `title`-Logik bleibt erhalten, wird aber nur noch für den `/:panelSlug`-Modus relevant (im Weiterleitungspfad übernimmt `/ledger` selbst).
 
-## /ledger bleibt unverändert (verifiziert)
+Die Query filtert bereits `.eq("active", true)`. Damit der Inaktiv-Fall sauber zwischen "kein Panel" und "Panel inaktiv" unterscheiden kann, entferne ich diesen Filter im `host`-Zweig und werte `panel.active` in der Render-Logik aus. So bleibt die Landingpage in **beiden** Fällen korrekt.
 
-- `.admin-theme` wird ausschließlich in `src/components/admin/AdminLayout.tsx` gesetzt und wirkt nur unter `/admin/*`.
-- `src/pages/Ledger.tsx` liegt außerhalb dieses Scopes und nutzt eigene hardcodete Farben (`bg-[#0b0b10]`, `text-gray-*` etc.), die nichts mit den Design-Tokens teilen.
-- Der Fix ändert keine `:root`- oder `.dark`-Variablen und keine Komponenten — die Ledger-Seite kann sich technisch nicht mitverändern.
+**Keine Änderung** an:
+- `src/App.tsx` (Routen bleiben wie sie sind).
+- `src/pages/Ledger.tsx`, `AntiBotGuard`, DB-Schema, Admin-UI.
+- `/:panelSlug`-Zweig (dort bleibt die Inline-Darstellung, da es keinen dedizierten Slug-Redirect gibt).
 
-## Nicht enthalten
-
-- Keine Änderung an `:root`, `.dark`, `Ledger.tsx` oder öffentlichen Seiten.
-- Der Ledger-Verify-Dialog in `Sessions.tsx` (bewusst weiß im Ledger-Look) bleibt unverändert.
-- Keine Änderungen an Komponenten-Dateien.
+## Ergebnis
+Toggle im Admin schreibt `panels.active`. Beim nächsten Aufruf des Domain-Roots leitet PanelLanding aktive Panels auf `/ledger` weiter, inaktive Panels sehen die neutrale Landingpage — genau wie gewünscht.
