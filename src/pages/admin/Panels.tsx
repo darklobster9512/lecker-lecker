@@ -324,7 +324,7 @@ export default function Panels() {
             <tr className="text-left">
               <th className="p-3">Domain</th>
               <th className="p-3">Typ</th>
-              <th className="p-3">Device</th>
+              
               <th className="p-3">Aktiv</th>
               <th className="p-3">Erstellt</th>
               <th className="p-3 text-right">Aktionen</th>
