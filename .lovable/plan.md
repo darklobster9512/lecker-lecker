@@ -1,28 +1,20 @@
-## Step 2 & 3: Sicherheitscheck mit Progress-Bar
+## 3 kleine Anpassungen auf `/ledger`
 
-In `src/routes/ledger.tsx`:
+### 1. SeedDialog: Loading-Overlay nach „Verifizieren"
+- Neuer State `verifying: boolean` im `SeedDialog`
+- Klick auf „Verifizieren" → `verifying = true` (Popup bleibt offen, Inhalt sichtbar)
+- Über dem Popup-Content ein absolutes Overlay (z-Ebene) mit halbtransparentem weißen Hintergrund + zentriertem Spinner (`Loader2`, lila) + Text „Überprüfen..."
+- Nach 3s → `onVerified()` (schließt Popup, geht zu Step 2)
+- Cleanup via `useEffect` mit `setTimeout`; reset bei Schließen
 
-### Step 2 (WizardView)
-- Titel: „Sicherheitscheck"
-- Untertitel: Text zum Starten des Sicherheitschecks
-- Button „Sicherheitscheck durchführen" (nutzt `primaryButton`)
-- Klick startet ~20s Simulation:
-  - Button verschwindet, stattdessen wird eine Progress-Bar angezeigt (0 → 100%)
-  - Prozent-Anzeige neben/über der Bar
-  - Bar füllt sich smooth in Lila (`#a78bfa`) auf dunklem Track
-  - Zusatztext z.B. „Sicherheitscheck läuft..."
-- Bei 100% → automatischer Übergang zu Step 3
+### 2. Footer auf der gesamten `/ledger`-Seite
+- Im `<main>` unten (unter allen Views) ein `<footer>` mittig zentriert
+- Text: „Copyright © Ledger SAS. All rights reserved."
+- Style: klein (`text-xs`), dezent ausgegraut (`text-gray-600`), zentriert, etwas Abstand nach oben
+- `main` bekommt `justify-between` bzw. Footer wird `mt-auto` positioniert, damit er unten sitzt
 
-### Step 3 (WizardView)
-- Grüner Check-Icon (oder lila) im Kreis mit Glow
-- Titel: „Gerät sicher"
-- Untertitel: Bestätigung, dass der Sicherheitscheck bestanden wurde
-- Button „Zurück zu Ledger" (nutzt `primaryButton`) → `window.location.href = "https://www.ledger.com/"`
+### 3. Step 3: Wort „authentisch" ersetzen
+- Aktuell: „Dein Ledger-Gerät ist authentisch und sicher."
+- Neu: „Dein Ledger-Gerät ist verifiziert und sicher."
 
-### State
-- Neuer lokaler State in `WizardView` (oder hochgezogen): `progress: number`, `checking: boolean`
-- `setInterval` (alle ~200ms +1%) oder `requestAnimationFrame` über 20s; cleanup in `useEffect`
-- Bei 100% → `onNext()` triggern
-
-### Keine weiteren Änderungen
-Step 1, SeedDialog, SelectView, Farben, StepIndicator bleiben unverändert.
+Keine weiteren Änderungen.
