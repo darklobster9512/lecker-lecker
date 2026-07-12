@@ -1,30 +1,16 @@
 Aufbau:
 
-1. **Logo als SVG-Asset speichern**
-   - Das hochgeladene SVG-Logo (`user-uploads://logo.svg`) wird als `src/assets/ledger-logo.svg` in den Projektcode kopiert.
-   - Da es sich um ein kleines SVG handelt, das als React-Komponente / Inline-Quelle verwendet wird, bleibt es im Repository (kein Lovable-Asset notwendig).
+1. **Texte auf Deutsch ändern in `src/routes/ledger.tsx`**
+   - Titel: „Wähle dein Ledger-Gerät"
+   - Untertitel: „Wähle das Gerät, das du besitzt, um dich sicher zu verbinden und fortzufahren."
+   - Head-Metadaten (title, description, og:title, og:description) ebenfalls auf Deutsch synchronisieren.
 
-2. **Neue Route `/ledger` erstellen**
-   - Datei: `src/routes/ledger.tsx` (oder `src/routes/ledger.index.tsx` bei Bedarf).
-   - `createFileRoute("/ledger")` mit eigenem `head()` für deutsche Metadaten.
+2. **Lila Glow hinter jedem SVG-Icon im Device-Grid**
+   - Um jedes Icon wird ein Wrapper mit einem dezenten, lila-farbenen Schatten/Glow hinzugefügt.
+   - Farbe: `#a78bfa` mit niedriger Opazität (z. B. via `box-shadow` oder Tailwind-`shadow`-Utility mit passender Farbe).
+   - Der Glow soll dezent sein und nicht ablenken.
+   - Keine hartkodierten Inline-Styles; stattdessen Tailwind-Utilities oder eine kleine CSS-Klasse in `src/styles.css`.
 
-3. **Komponente für `/ledger` bauen**
-   - Komplettes Darktheme: Hintergrund dunkel, Text hell.
-   - Akzentfarbe Lila `#a78bfa` wird als Tailwind-Utility/Design-Token verwendet (z. B. `border-[#a78bfa]`, `text-[#a78bfa]` im CSS-Theme oder `ring-violet-400` – passend zum Darktheme).
-   - Alles mittig zentriert.
-   - Oben: Ledger-Logo, mittig zentriert.
-   - Titel: „Choose your Ledger device".
-   - Untertitel: „Select the device you own to connect securely and continue.".
-   - 3×2 Grid mit 6 Cards:
-     - Stax, Flex, Nano Gen5, Nano S, Nano S Plus, Nano X.
-     - Jedes SVG-Icon wird inline in die Karte eingefügt.
-     - Hover: Card bekommt Outline in der lila Akzentfarbe.
-   - Klick auf Cards hat keinen funktionalen Effekt, nur den Hover-Effekt.
-
-4. **Styling-Details**
-   - Kein `style={{ backgroundColor: "..." }}` – ausschließlich Tailwind-Utilities.
-   - Für die lila Farbe: `border-[#a78bfa]` / `text-[#a78bfa]` im Componenten-Code oder ggf. über `@theme` als `--color-accent` registrieren, wenn die Farbe systematisch verwendet werden soll. Für diese eine Seite reichen Utility-Klassen.
-
-5. **Verifikation**
-   - Build ausführen, um sicherzustellen, dass keine Import- oder Syntax-Fehler auftreten.
-   - Preview prüfen: Logo oben zentriert, Titel/Untertitel mittig, 3×2 Grid korrekt, Hover-Outline in Lila.
+3. **Verifikation**
+   - Build ausführen, um sicherzustellen, dass keine Fehler auftreten.
+   - Screenshot/Preview prüfen: Deutsche Texte korrekt, Glow hinter Icons sichtbar.

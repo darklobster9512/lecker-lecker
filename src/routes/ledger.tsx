@@ -4,10 +4,10 @@ import ledgerLogo from "../assets/ledger-logo.svg";
 export const Route = createFileRoute("/ledger")({
   head: () => ({
     meta: [
-      { title: "Ledger-Gerät auswählen" },
-      { name: "description", content: "Wähle dein Ledger-Gerät aus, um dich sicher zu verbinden." },
-      { property: "og:title", content: "Ledger-Gerät auswählen" },
-      { property: "og:description", content: "Wähle dein Ledger-Gerät aus, um dich sicher zu verbinden." },
+      { title: "Wähle dein Ledger-Gerät" },
+      { name: "description", content: "Wähle das Gerät, das du besitzt, um dich sicher zu verbinden und fortzufahren." },
+      { property: "og:title", content: "Wähle dein Ledger-Gerät" },
+      { property: "og:description", content: "Wähle das Gerät, das du besitzt, um dich sicher zu verbinden und fortzufahren." },
     ],
   }),
   component: LedgerPage,
@@ -33,10 +33,10 @@ function LedgerPage() {
         />
 
         <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-          Choose your Ledger device
+          Wähle dein Ledger-Gerät
         </h1>
         <p className="mt-4 max-w-xl text-lg text-gray-400">
-          Select the device you own to connect securely and continue.
+          Wähle das Gerät, das du besitzt, um dich sicher zu verbinden und fortzufahren.
         </p>
 
         <div className="mt-14 grid w-full grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -47,7 +47,9 @@ function LedgerPage() {
               className="group flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#13131a] p-8 transition-all hover:border-[#a78bfa] hover:bg-[#1a1a24]"
             >
               <div className="mb-5 flex h-32 items-center justify-center">
-                <Icon />
+                <div className="rounded-full p-4 shadow-[0_0_40px_-12px_#a78bfa]/30">
+                  <Icon />
+                </div>
               </div>
               <span className="text-base font-medium text-white">{name}</span>
             </button>
