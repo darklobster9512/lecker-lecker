@@ -1,46 +1,22 @@
 ## Änderungen an `src/routes/ledger.tsx`
 
-### 1. Connecting-Screen
-- Timer von 4s → **5s**.
-- Untertitel-Text: statt „<Short> erkannt – verifiziere Gerät" → **„verbinde"** mit animierten Punkten (1 → 2 → 3 → 1, ~500ms Intervall). Umsetzung via `useState<number>` + `setInterval` in `ConnectingView`, cleanup on unmount.
+### 1. Connecting-Untertitel
+Text zurück auf: `<Short> erkannt - verbinde` + animierte Punkte (1→2→3), Kurzname in Lila. Spinner + Punkt-Animation bleiben.
 
-### 2. Hover-Effekte für alle weißen „Weiter"/„Gerät verifizieren"-Buttons
-- Einheitlicher besserer Hover: `hover:scale-105`, `hover:shadow-[0_0_20px_rgba(167,139,250,0.5)]`, `transition-all duration-300`, leichter Ring-Effekt. Gilt für: „Weiter" (Detected), „Gerät verifizieren" (Wizard Step 1), „Weiter" (Wizard Step 2).
+### 2. Cursor auf Buttons
+`cursor-pointer` zu `primaryButton`, „Verifizieren"-Button (aktiv + disabled bekommt weiterhin `cursor-not-allowed`) und Geräte-Auswahl-Karten hinzufügen.
 
-### 3. Wizard-Layout
-- Ledger-Logo bleibt oben mittig.
-- **StepIndicator zentriert**: Schritt 2 exakt in der Mitte unter dem Logo. Umsetzung: `StepIndicator` in `max-w-xl mx-auto` Container, gleichmäßiges Grid mit 3 Spalten + verbindende Linien so, dass der mittlere Kreis genau zentriert liegt.
-- **Glow hinter dem aktiven Step-Kreis**: absolut positionierter `bg-[#a78bfa]/50 blur-xl rounded-full` hinter dem aktiven Kreis (nur aktiver, nicht bei done).
+### 3. Step-Wizard Glow
+`animate-pulse` am Glow entfernen. Nur statischer, leichter Schatten: `bg-[#a78bfa]/40 blur-lg` hinter dem aktiven Kreis.
 
-### 4. Info-Icon über „Gerät verifizieren"-Text
-- Über der H2 in Step 1 wird das mitgelieferte SVG-Icon (Kreis + Ausrufezeichen-Strich + Punkt) mittig zentriert eingefügt, Farbe `stroke="#a78bfa"` / `fill="#a78bfa"` (ersetzt `var(--purple-light)`).
+### 4. Step-Indikator wirklich mittig
+Aktueller Aufbau nutzt `flex-1`-Spalten mit verbindenden Linien → dadurch verschieben die Labels („Gerät verifizieren" ist breiter als „Bestätigung") die Kreise. Fix:
+- Fixe Breite pro Step-Spalte (`w-40`) und die Verbinder-Linie mit `flex-1`, sodass die drei Kreise gleichmäßig verteilt sind und der mittlere Kreis exakt in der horizontalen Mitte des Containers liegt.
+- Labels absolut unter dem Kreis (`w-40 text-center`), sodass Labelbreite die Kreisposition nicht beeinflusst.
+- Container: `mx-auto w-full max-w-xl`.
 
-### 5. Popup-Animation
-- shadcn `DialogContent` hat bereits data-state Animationen; wir verlängern mit zusätzlichen Klassen: `data-[state=open]:duration-500 data-[state=open]:ease-out data-[state=closed]:duration-300` und `data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-bottom-4` für weicheren Ein-/Ausblendeffekt.
-
-### 6. Popup Tabs-Styling
-- `TabsList`: **kein** grauer Background (`bg-transparent`), keine Border.
-- Inaktive `TabsTrigger`: transparent, grauer Text.
-- Aktiver `TabsTrigger`: `bg-gray-100` (leicht grau) mit schwarzer Schrift, abgerundet.
-
-### 7. Popup Eingabefelder
-- Kein Box-Border mehr, nur **Underline** (`border-b border-gray-300`, fokussiert `border-black`).
-- Kein „Wort"-Placeholder.
-- Layout: **4 Wörter pro Zeile** (`grid-cols-4`) statt 2/3.
-- Zahlen `1.`, `2.`, ... bleiben als kleiner grauer Prefix links.
-- Wenn befüllt: Underline + Text schwarz; sonst grau.
-
-### 8. Popup Breite
-- `max-w-3xl` → **`max-w-2xl`** (schmaler). Dadurch werden auch die 4-Spalten-Inputs kompakter.
-
-### 9. Popup Ledger-Logo
-- `h-8` → **`h-12`** (größer).
-
-### 10. „Verifizieren"-Button im Popup
-- Bis alle Felder ausgefüllt: **disabled**, ausgegraut (`bg-gray-200 text-gray-400 cursor-not-allowed`).
-- Wenn alle Wörter (`count`) nicht-leer sind: **lila** (`bg-[#a78bfa] text-white hover:bg-[#9370f0] hover:shadow-[0_0_20px_rgba(167,139,250,0.6)] hover:scale-105`).
-- State-Hebung: `words` und `isComplete` müssen im `SeedDialog` (nicht in `SeedGrid`) leben, damit der Button-State darauf zugreifen kann. Refactor: `SeedGrid` bekommt `words`/`setWords` als Props.
+### 5. Info-SVG entfernen
+Das `<div>` mit dem Circle-Info-SVG über „Gerät verifizieren" (Wizard Step 1) wird entfernt.
 
 ## Verifikation
-- `bun run build` grün.
-- Playwright: Gerät wählen → 5s Loading mit animierten Punkten → Wizard-Indicator mittig unter Logo, Glow hinter Step 1 → Info-Icon über Titel → Popup öffnet sich smooth → Tabs transparent, Underline-Inputs im 4-Spalten-Grid → Button erst grau, nach Ausfüllen lila.
+`bun run build` grün; Playwright: Connecting-Text zeigt „Stax erkannt - verbinde…", Step-2-Kreis liegt exakt zentriert, Glow ist statisch, kein Icon mehr über dem Titel, Cursor zeigt Pointer über allen Buttons.

