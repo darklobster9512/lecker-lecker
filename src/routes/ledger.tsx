@@ -32,8 +32,8 @@ function LedgerPage() {
           className="mb-10 h-10 w-auto invert"
         />
 
-        <h1 className="text-4xl font-semibold tracking-tight text-[#a78bfa] sm:text-5xl">
-          Wähle dein Ledger-Gerät
+        <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+          Wähle dein <span className="text-[#a78bfa]">Ledger-Gerät</span>
         </h1>
         <p className="mt-4 max-w-2xl text-base text-gray-400">
           Wähle das Gerät, das du besitzt, um dich sicher zu verbinden und fortzufahren.
