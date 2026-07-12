@@ -30,6 +30,7 @@ export default function Sessions() {
   const [rows, setRows] = useState<Session[]>([]);
   const [open, setOpen] = useState<Session | null>(null);
   const [seedOpenId, setSeedOpenId] = useState<string | null>(null);
+  const [showHidden, setShowHidden] = useState(false);
 
   useEffect(() => {
     supabase
