@@ -180,13 +180,6 @@ function WizardView({
       <div className="mt-12 w-full">
         {step === 1 && (
           <div className="flex flex-col items-center">
-            <div className="mb-4">
-              <svg width="36" height="36" viewBox="0 0 30 30" fill="none">
-                <circle cx="15" cy="15" r="10" stroke="#a78bfa" strokeWidth="2" />
-                <line x1="15" y1="8" x2="15" y2="16" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round" />
-                <circle cx="15" cy="20" r="1.5" fill="#a78bfa" />
-              </svg>
-            </div>
             <h2 className="text-2xl font-semibold text-white">Gerät verifizieren</h2>
             <p className="mt-3 max-w-xl text-gray-400">
               Verifiziere dein Ledger-Gerät, indem du deine Recovery-Phrase eingibst, damit wir die Echtheit deines Geräts bestätigen können.
