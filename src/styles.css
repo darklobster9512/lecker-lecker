@@ -166,6 +166,16 @@
   --sidebar-accent-foreground: oklch(0.98 0.005 285);
   --sidebar-border: oklch(0.65 0.22 300 / 22%);
   --sidebar-ring: oklch(0.65 0.22 300);
+
+  /* Re-bind derived @theme color tokens inside this scope, because
+     `@theme inline` resolves them once on :root and descendants would
+     otherwise inherit the light-theme values. */
+  --color-border: oklch(0.65 0.22 300 / 28%);
+  --color-sidebar-border: oklch(0.65 0.22 300 / 22%);
+  --color-input: oklch(1 0 0 / 12%);
+  --color-ring: oklch(0.65 0.22 300);
+  --color-sidebar-ring: oklch(0.65 0.22 300);
+
   color-scheme: dark;
 }
 
