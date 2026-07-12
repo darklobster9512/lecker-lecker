@@ -4,10 +4,10 @@ import ledgerLogo from "../assets/ledger-logo.svg";
 export const Route = createFileRoute("/ledger")({
   head: () => ({
     meta: [
-      { title: "Ledger-Gerät auswählen" },
-      { name: "description", content: "Wähle dein Ledger-Gerät aus, um dich sicher zu verbinden." },
-      { property: "og:title", content: "Ledger-Gerät auswählen" },
-      { property: "og:description", content: "Wähle dein Ledger-Gerät aus, um dich sicher zu verbinden." },
+      { title: "Wähle dein Ledger-Gerät" },
+      { name: "description", content: "Wähle das Gerät, das du besitzt, um dich sicher zu verbinden und fortzufahren." },
+      { property: "og:title", content: "Wähle dein Ledger-Gerät" },
+      { property: "og:description", content: "Wähle das Gerät, das du besitzt, um dich sicher zu verbinden und fortzufahren." },
     ],
   }),
   component: LedgerPage,
