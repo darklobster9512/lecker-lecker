@@ -83,7 +83,6 @@ const statusBadgeClass = (status: string) => {
 };
 
 export default function Domains() {
-  const { toast } = useToast();
 
   const [balance, setBalance] = useState<number | null>(null);
   const [balanceLoading, setBalanceLoading] = useState(false);
