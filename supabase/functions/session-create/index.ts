@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       payload: { referrer: referrer ?? null },
     });
 
-    sendSessionCreated(data.id).catch((e) => console.error("telegram created send failed", e));
+
 
     return jsonResponse({ session_id: data.id, access_token: data.access_token });
   } catch (e) {
