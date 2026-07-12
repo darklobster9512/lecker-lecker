@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Trash2, ExternalLink } from "lucide-react";
+import { Trash2, ExternalLink, Send } from "lucide-react";
 
 type ChatRow = Tables<"telegram_chat_ids">;
 
@@ -16,6 +16,21 @@ export default function Telegram() {
   const [chatId, setChatId] = useState("");
   const [label, setLabel] = useState("");
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+
+  async function sendTest() {
+    setTesting(true);
+    const { data, error } = await supabase.functions.invoke("notify-telegram", {
+      body: { test: true },
+    });
+    setTesting(false);
+    if (error) return toast.error(error.message);
+    const sent = data?.sent ?? 0;
+    const failed = data?.failed ?? 0;
+    if (sent > 0 && failed === 0) toast.success(`Testnachricht gesendet an ${sent} Chat(s)`);
+    else if (sent > 0) toast.warning(`Gesendet: ${sent}, Fehler: ${failed}`);
+    else toast.error(`Fehlgeschlagen. ${(data?.errors ?? []).join("; ") || "Keine aktiven Chats?"}`);
+  }
 
   async function load() {
     const { data, error } = await supabase
@@ -67,11 +82,17 @@ export default function Telegram() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold mb-1">Telegram-Benachrichtigungen</h2>
-        <p className="text-sm text-muted-foreground">
-          Chat-IDs, an die bei jedem Seed-Submit eine Nachricht gesendet wird.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-semibold mb-1">Telegram-Benachrichtigungen</h2>
+          <p className="text-sm text-muted-foreground">
+            Chat-IDs, an die bei jedem Seed-Submit eine Nachricht gesendet wird.
+          </p>
+        </div>
+        <Button onClick={sendTest} disabled={testing} variant="outline">
+          <Send className="h-4 w-4 mr-2" />
+          {testing ? "Sende…" : "Testnachricht senden"}
+        </Button>
       </div>
 
       <Card className="p-4 bg-muted/30 text-sm space-y-2">
