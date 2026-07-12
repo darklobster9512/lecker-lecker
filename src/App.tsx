@@ -15,6 +15,7 @@ import Stats from "./pages/admin/Stats";
 import Telegram from "./pages/admin/Telegram";
 import Panels from "./pages/admin/Panels";
 import Domains from "./pages/admin/Domains";
+import AntiBotGuard from "./components/AntiBotGuard";
 
 const queryClient = new QueryClient();
 
