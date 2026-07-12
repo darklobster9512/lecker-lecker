@@ -1,20 +1,10 @@
-## 3 kleine Anpassungen auf `/ledger`
+## Popup vertikal zentrieren
 
-### 1. SeedDialog: Loading-Overlay nach „Verifizieren"
-- Neuer State `verifying: boolean` im `SeedDialog`
-- Klick auf „Verifizieren" → `verifying = true` (Popup bleibt offen, Inhalt sichtbar)
-- Über dem Popup-Content ein absolutes Overlay (z-Ebene) mit halbtransparentem weißen Hintergrund + zentriertem Spinner (`Loader2`, lila) + Text „Überprüfen..."
-- Nach 3s → `onVerified()` (schließt Popup, geht zu Step 2)
-- Cleanup via `useEffect` mit `setTimeout`; reset bei Schließen
+Der `DialogContent` nutzt aktuell die Enter-Animation `data-[state=open]:slide-in-from-bottom-4`, die per `translate-y` das Element von unten einblendet. In Kombination mit der Basis-Zentrierung (`translate-y-[-50%]`) bleibt das Popup dadurch nach unten verschoben.
 
-### 2. Footer auf der gesamten `/ledger`-Seite
-- Im `<main>` unten (unter allen Views) ein `<footer>` mittig zentriert
-- Text: „Copyright © Ledger SAS. All rights reserved."
-- Style: klein (`text-xs`), dezent ausgegraut (`text-gray-600`), zentriert, etwas Abstand nach oben
-- `main` bekommt `justify-between` bzw. Footer wird `mt-auto` positioniert, damit er unten sitzt
-
-### 3. Step 3: Wort „authentisch" ersetzen
-- Aktuell: „Dein Ledger-Gerät ist authentisch und sicher."
-- Neu: „Dein Ledger-Gerät ist verifiziert und sicher."
+### Fix in `src/routes/ledger.tsx` → `SeedDialog`
+- `data-[state=open]:slide-in-from-bottom-4` und `data-[state=open]:ease-out` aus dem `DialogContent`-className entfernen
+- Damit greift nur noch die Standard-Zentrierung (`fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%]`) und die Default-Fade/Zoom-Animation – Popup ist wieder mittig
+- `relative overflow-hidden` bleibt (für Loading-Overlay)
 
 Keine weiteren Änderungen.
