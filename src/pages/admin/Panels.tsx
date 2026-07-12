@@ -76,6 +76,20 @@ export default function Panels() {
   const [editorType, setEditorType] = useState<PanelType | null>(null);
   const [editing, setEditing] = useState<EditForm | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  const editFileRef = useRef<HTMLInputElement>(null);
+
+  function readFaviconAsDataUrl(file: File, onDone: (url: string) => void) {
+    if (file.size > 200 * 1024) {
+      toast.error("Datei zu groß (max. 200 KB).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") onDone(reader.result);
+    };
+    reader.onerror = () => toast.error("Datei konnte nicht gelesen werden.");
+    reader.readAsDataURL(file);
+  }
 
   async function load() {
     setLoading(true);
