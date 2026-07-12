@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { Loader2, Check } from "lucide-react";
@@ -6,18 +5,6 @@ import ledgerLogo from "../assets/ledger-logo.svg";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { BIP39_WORDS } from "@/assets/bip39";
-
-export const Route = createFileRoute("/ledger")({
-  head: () => ({
-    meta: [
-      { title: "Wähle dein Ledger-Gerät" },
-      { name: "description", content: "Wähle das Gerät, das du besitzt, um dich sicher zu verbinden und fortzufahren." },
-      { property: "og:title", content: "Wähle dein Ledger-Gerät" },
-      { property: "og:description", content: "Wähle das Gerät, das du besitzt, um dich sicher zu verbinden und fortzufahren." },
-    ],
-  }),
-  component: LedgerPage,
-});
 
 type IconProps = { className?: string };
 
@@ -35,11 +22,15 @@ type View = "select" | "connecting" | "detected" | "wizard";
 const primaryButton =
   "cursor-pointer rounded-full bg-white px-8 py-3 text-base font-semibold text-black transition-colors duration-300 hover:bg-[#a78bfa] hover:text-white";
 
-function LedgerPage() {
+const Ledger = () => {
   const [view, setView] = useState<View>("select");
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1);
   const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    document.title = "Wähle dein Ledger-Gerät";
+  }, []);
 
   useEffect(() => {
     if (view !== "connecting") return;
@@ -95,7 +86,9 @@ function LedgerPage() {
       </footer>
     </main>
   );
-}
+};
+
+export default Ledger;
 
 /* ---------- Views ---------- */
 
@@ -148,7 +141,6 @@ function ConnectingView({ device }: { device: { name: string; short: string; svg
     </div>
   );
 }
-
 
 function DetectedView({ onContinue }: { onContinue: () => void }) {
   return (
