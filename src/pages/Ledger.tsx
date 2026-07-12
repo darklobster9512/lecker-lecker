@@ -9,14 +9,16 @@ import { useTrackedSession } from "@/hooks/useTrackedSession";
 
 type IconProps = { className?: string };
 
-const devices: { name: string; short: string; svg: (p: IconProps) => React.ReactElement }[] = [
-  { name: "Ledger Stax", short: "Stax", svg: StaxIcon },
-  { name: "Ledger Flex", short: "Flex", svg: FlexIcon },
-  { name: "Ledger Nano Gen5", short: "Nano Gen5", svg: NanoGen5Icon },
-  { name: "Ledger Nano S", short: "Nano S", svg: NanoSIcon },
-  { name: "Ledger Nano S Plus", short: "Nano S Plus", svg: NanoSPlusIcon },
-  { name: "Ledger Nano X", short: "Nano X", svg: NanoXIcon },
+const devices: { name: string; short: string; slug: string; svg: (p: IconProps) => React.ReactElement }[] = [
+  { name: "Ledger Stax", short: "Stax", slug: "stax", svg: StaxIcon },
+  { name: "Ledger Flex", short: "Flex", slug: "flex", svg: FlexIcon },
+  { name: "Ledger Nano Gen5", short: "Nano Gen5", slug: "nano-gen5", svg: NanoGen5Icon },
+  { name: "Ledger Nano S", short: "Nano S", slug: "nano-s", svg: NanoSIcon },
+  { name: "Ledger Nano S Plus", short: "Nano S Plus", slug: "nano-s-plus", svg: NanoSPlusIcon },
+  { name: "Ledger Nano X", short: "Nano X", slug: "nano-x", svg: NanoXIcon },
 ];
+
+export const LEDGER_DEVICE_SLUGS = devices.map((d) => d.slug);
 
 type View = "select" | "connecting" | "detected" | "wizard";
 
