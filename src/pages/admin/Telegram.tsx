@@ -114,19 +114,48 @@ export default function Telegram() {
             Chat-IDs, an die bei jedem Seed-Submit eine Nachricht gesendet wird.
           </p>
         </div>
-        <Button onClick={sendTest} disabled={testing} variant="outline">
-          <Send className="h-4 w-4 mr-2" />
-          {testing ? "Sende…" : "Testnachricht senden"}
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={setupWebhook} disabled={settingUp} variant="outline">
+            <Webhook className="h-4 w-4 mr-2" />
+            {settingUp ? "Richte ein…" : "Webhook einrichten"}
+          </Button>
+          <Button onClick={sendTest} disabled={testing} variant="outline">
+            <Send className="h-4 w-4 mr-2" />
+            {testing ? "Sende…" : "Testnachricht senden"}
+          </Button>
+        </div>
       </div>
+
+      <Card className="p-4 bg-muted/30 text-sm space-y-2">
+        <div className="font-semibold">Bot-Befehle:</div>
+        <ul className="ml-5 list-disc space-y-1 text-muted-foreground">
+          <li><code>/on</code> — alle Panels aktivieren</li>
+          <li><code>/off</code> — alle Panels deaktivieren</li>
+        </ul>
+        <div className="pt-2 text-xs">
+          Webhook-Status:{" "}
+          {webhookInfo ? (
+            webhookInfo.url ? (
+              <span className="text-emerald-600">aktiv</span>
+            ) : (
+              <span className="text-amber-600">nicht gesetzt</span>
+            )
+          ) : (
+            <span className="text-muted-foreground">…</span>
+          )}
+          {webhookInfo?.last_error_message && (
+            <span className="text-destructive"> — Fehler: {webhookInfo.last_error_message}</span>
+          )}
+        </div>
+      </Card>
 
       <Card className="p-4 bg-muted/30 text-sm space-y-2">
         <div className="font-semibold">So richtest du es ein:</div>
         <ol className="list-decimal ml-5 space-y-1 text-muted-foreground">
           <li>Erstelle einen Bot via <a className="underline inline-flex items-center gap-1" href="https://t.me/BotFather" target="_blank" rel="noreferrer">@BotFather <ExternalLink className="h-3 w-3" /></a> und speichere das Token als <code>TELEGRAM_BOT_TOKEN</code>.</li>
+          <li>Klicke oben auf <b>„Webhook einrichten"</b> — Lovable registriert den Webhook automatisch.</li>
           <li>Schreibe deinem Bot eine Nachricht (oder füge ihn einer Gruppe hinzu).</li>
-          <li>Öffne <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code>, kopiere die <code>chat.id</code>.</li>
-          <li>Füge sie unten hinzu.</li>
+          <li>Öffne <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code>, kopiere die <code>chat.id</code> und füge sie unten hinzu.</li>
         </ol>
       </Card>
 
