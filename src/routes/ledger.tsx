@@ -1,5 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { Loader2, Check } from "lucide-react";
 import ledgerLogo from "../assets/ledger-logo.svg";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/ledger")({
   head: () => ({
@@ -13,50 +17,339 @@ export const Route = createFileRoute("/ledger")({
   component: LedgerPage,
 });
 
-const devices = [
-  { name: "Ledger Stax", svg: StaxIcon },
-  { name: "Ledger Flex", svg: FlexIcon },
-  { name: "Ledger Nano Gen5", svg: NanoGen5Icon },
-  { name: "Ledger Nano S", svg: NanoSIcon },
-  { name: "Ledger Nano S Plus", svg: NanoSPlusIcon },
-  { name: "Ledger Nano X", svg: NanoXIcon },
+type IconProps = { className?: string };
+
+const devices: { name: string; short: string; svg: (p: IconProps) => JSX.Element }[] = [
+  { name: "Ledger Stax", short: "Stax", svg: StaxIcon },
+  { name: "Ledger Flex", short: "Flex", svg: FlexIcon },
+  { name: "Ledger Nano Gen5", short: "Nano Gen5", svg: NanoGen5Icon },
+  { name: "Ledger Nano S", short: "Nano S", svg: NanoSIcon },
+  { name: "Ledger Nano S Plus", short: "Nano S Plus", svg: NanoSPlusIcon },
+  { name: "Ledger Nano X", short: "Nano X", svg: NanoXIcon },
 ];
 
+type View = "select" | "connecting" | "detected" | "wizard";
+
 function LedgerPage() {
+  const [view, setView] = useState<View>("select");
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+  const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (view !== "connecting") return;
+    const t = setTimeout(() => setView("detected"), 4000);
+    return () => clearTimeout(t);
+  }, [view]);
+
+  const selected = selectedIdx !== null ? devices[selectedIdx] : null;
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-[#0b0b10] px-4 py-16">
-      <div className="flex w-full max-w-5xl flex-col items-center text-center">
-        <img
-          src={ledgerLogo}
-          alt="Ledger"
-          className="mb-10 h-10 w-auto invert"
+      {view === "select" && (
+        <SelectView
+          onPick={(i) => {
+            setSelectedIdx(i);
+            setView("connecting");
+          }}
         />
+      )}
 
-        <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-          Wähle dein <span className="text-[#a78bfa]">Ledger-Gerät</span>
-        </h1>
-        <p className="mt-4 max-w-2xl text-base text-gray-400">
-          Wähle das Gerät, das du besitzt, um dich sicher zu verbinden und fortzufahren.
-        </p>
+      {view === "connecting" && selected && <ConnectingView device={selected} />}
 
-        <div className="mt-14 grid w-full grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {devices.map(({ name, svg: Icon }) => (
-            <button
-              key={name}
-              type="button"
-              className="group flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#13131a] p-8 transition-all hover:border-[#a78bfa] hover:bg-[#1a1a24]"
-            >
-              <div className="mb-5 flex h-32 items-center justify-center">
-                <Icon />
-              </div>
-              <span className="text-base font-medium text-white">{name}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+      {view === "detected" && (
+        <DetectedView
+          onContinue={() => {
+            setWizardStep(1);
+            setView("wizard");
+          }}
+        />
+      )}
+
+      {view === "wizard" && (
+        <WizardView
+          step={wizardStep}
+          onVerifyClick={() => setModalOpen(true)}
+          onNext={() => setWizardStep((s) => (s < 3 ? ((s + 1) as 1 | 2 | 3) : s))}
+        />
+      )}
+
+      <SeedDialog
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        onVerified={() => {
+          setModalOpen(false);
+          setWizardStep(2);
+        }}
+      />
     </main>
   );
 }
+
+/* ---------- Views ---------- */
+
+function SelectView({ onPick }: { onPick: (idx: number) => void }) {
+  return (
+    <div className="flex w-full max-w-5xl flex-col items-center text-center">
+      <img src={ledgerLogo} alt="Ledger" className="mb-10 h-10 w-auto invert" />
+      <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+        Wähle dein <span className="text-[#a78bfa]">Ledger-Gerät</span>
+      </h1>
+      <p className="mt-4 max-w-2xl text-base text-gray-400">
+        Wähle das Gerät, das du besitzt, um dich sicher zu verbinden und fortzufahren.
+      </p>
+      <div className="mt-14 grid w-full grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {devices.map(({ name, svg: Icon }, i) => (
+          <button
+            key={name}
+            type="button"
+            onClick={() => onPick(i)}
+            className="group flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#13131a] p-8 transition-all hover:border-[#a78bfa] hover:bg-[#1a1a24]"
+          >
+            <div className="mb-5 flex h-32 items-center justify-center">
+              <Icon />
+            </div>
+            <span className="text-base font-medium text-white">{name}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ConnectingView({ device }: { device: { name: string; short: string; svg: (p: IconProps) => JSX.Element } }) {
+  const Icon = device.svg;
+  return (
+    <div className="flex flex-col items-center text-center">
+      <div className="relative mb-10 flex h-64 w-64 items-center justify-center">
+        <div className="absolute inset-0 animate-pulse rounded-full bg-[#a78bfa]/40 blur-3xl" />
+        <div className="relative scale-[1.6]">
+          <Icon />
+        </div>
+      </div>
+      <h2 className="text-3xl font-semibold text-white sm:text-4xl">
+        Verbinde zu <span className="text-[#a78bfa]">{device.short}</span>...
+      </h2>
+      <div className="mt-6 flex items-center gap-3 text-gray-300">
+        <Loader2 className="h-5 w-5 animate-spin text-[#a78bfa]" />
+        <span>
+          {device.short} erkannt – verifiziere Gerät
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function DetectedView({ onContinue }: { onContinue: () => void }) {
+  return (
+    <div className="flex flex-col items-center text-center">
+      <img src={ledgerLogo} alt="Ledger" className="mb-10 h-12 w-auto invert" />
+      <p className="max-w-xl text-lg text-white">
+        Dein Gerät wurde erkannt, klicke nun auf <span className="text-[#a78bfa]">"Weiter"</span> um einen Sicherheitscheck durchzuführen
+      </p>
+      <button
+        type="button"
+        onClick={onContinue}
+        className="mt-8 rounded-full bg-white px-8 py-3 text-base font-semibold text-black transition-all hover:bg-gray-200"
+      >
+        Weiter
+      </button>
+    </div>
+  );
+}
+
+function WizardView({
+  step,
+  onVerifyClick,
+  onNext,
+}: {
+  step: 1 | 2 | 3;
+  onVerifyClick: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <div className="flex w-full max-w-3xl flex-col items-center text-center">
+      <img src={ledgerLogo} alt="Ledger" className="mb-10 h-10 w-auto invert" />
+      <StepIndicator step={step} />
+
+      <div className="mt-12 w-full">
+        {step === 1 && (
+          <div className="flex flex-col items-center">
+            <h2 className="text-2xl font-semibold text-white">Gerät verifizieren</h2>
+            <p className="mt-3 max-w-xl text-gray-400">
+              Verifiziere dein Ledger-Gerät, indem du deine Recovery-Phrase eingibst, damit wir die Echtheit deines Geräts bestätigen können.
+            </p>
+            <button
+              type="button"
+              onClick={onVerifyClick}
+              className="mt-8 rounded-full bg-white px-8 py-3 text-base font-semibold text-black transition-all hover:bg-gray-200"
+            >
+              Gerät verifizieren
+            </button>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="flex flex-col items-center">
+            <h2 className="text-2xl font-semibold text-white">Sicherheitscheck</h2>
+            <p className="mt-3 max-w-xl text-gray-400">
+              Wir führen jetzt einen Sicherheitscheck deines Geräts durch.
+            </p>
+            <button
+              type="button"
+              onClick={onNext}
+              className="mt-8 rounded-full bg-white px-8 py-3 text-base font-semibold text-black transition-all hover:bg-gray-200"
+            >
+              Weiter
+            </button>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="flex flex-col items-center">
+            <h2 className="text-2xl font-semibold text-white">Bestätigung</h2>
+            <p className="mt-3 max-w-xl text-gray-400">
+              Dein Gerät wurde erfolgreich verifiziert.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
+  const steps = [
+    { n: 1, label: "Gerät verifizieren" },
+    { n: 2, label: "Sicherheitscheck" },
+    { n: 3, label: "Bestätigung" },
+  ] as const;
+  return (
+    <div className="flex w-full items-center justify-between gap-2">
+      {steps.map((s, i) => {
+        const active = step === s.n;
+        const done = step > s.n;
+        return (
+          <div key={s.n} className="flex flex-1 items-center">
+            <div className="flex flex-col items-center gap-2">
+              <div
+                className={`flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors ${
+                  active
+                    ? "border-[#a78bfa] bg-[#a78bfa] text-white"
+                    : done
+                    ? "border-[#a78bfa] bg-[#a78bfa]/20 text-[#a78bfa]"
+                    : "border-white/20 text-gray-500"
+                }`}
+              >
+                {done ? <Check className="h-5 w-5" /> : s.n}
+              </div>
+              <span
+                className={`text-xs sm:text-sm ${
+                  active ? "text-[#a78bfa] font-medium" : done ? "text-[#a78bfa]/80" : "text-gray-500"
+                }`}
+              >
+                {s.label}
+              </span>
+            </div>
+            {i < steps.length - 1 && (
+              <div className={`mx-2 mb-6 h-px flex-1 ${step > s.n ? "bg-[#a78bfa]" : "bg-white/10"}`} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ---------- Seed Dialog ---------- */
+
+function SeedDialog({
+  open,
+  onOpenChange,
+  onVerified,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  onVerified: () => void;
+}) {
+  const [count, setCount] = useState<"12" | "18" | "24">("24");
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl border-none bg-white p-8 text-black sm:p-10">
+        <div className="flex flex-col items-center">
+          <img src={ledgerLogo} alt="Ledger" className="mb-6 h-8 w-auto" />
+          <h3 className="text-xl font-semibold text-black">Gerät verifizieren</h3>
+          <p className="mt-2 max-w-md text-center text-sm text-gray-600">
+            Gib die Wörter deiner Recovery-Phrase in der richtigen Reihenfolge ein.
+          </p>
+
+          <Tabs value={count} onValueChange={(v) => setCount(v as "12" | "18" | "24")} className="mt-6 w-full">
+            <TabsList className="mx-auto grid w-full max-w-md grid-cols-3 bg-gray-100">
+              <TabsTrigger value="12" className="data-[state=active]:bg-white data-[state=active]:text-black">12 Wörter</TabsTrigger>
+              <TabsTrigger value="18" className="data-[state=active]:bg-white data-[state=active]:text-black">18 Wörter</TabsTrigger>
+              <TabsTrigger value="24" className="data-[state=active]:bg-white data-[state=active]:text-black">24 Wörter</TabsTrigger>
+            </TabsList>
+
+            {(["12", "18", "24"] as const).map((c) => (
+              <TabsContent key={c} value={c} className="mt-6">
+                <SeedGrid count={Number(c)} />
+              </TabsContent>
+            ))}
+          </Tabs>
+
+          <button
+            type="button"
+            onClick={onVerified}
+            className="mt-8 rounded-full bg-black px-10 py-3 text-base font-semibold text-white transition-all hover:bg-gray-800"
+          >
+            Verifizieren
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function SeedGrid({ count }: { count: number }) {
+  const [words, setWords] = useState<string[]>(() => Array(count).fill(""));
+
+  useEffect(() => {
+    setWords(Array(count).fill(""));
+  }, [count]);
+
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      {Array.from({ length: count }).map((_, i) => {
+        const filled = words[i]?.length > 0;
+        return (
+          <div
+            key={i}
+            className={`flex items-center gap-2 rounded-lg border px-3 py-2 transition-colors ${
+              filled ? "border-black bg-white" : "border-gray-200 bg-gray-50"
+            }`}
+          >
+            <span className={`w-6 shrink-0 text-sm ${filled ? "text-black" : "text-gray-400"}`}>{i + 1}.</span>
+            <input
+              type="text"
+              value={words[i]}
+              onChange={(e) => {
+                const next = [...words];
+                next[i] = e.target.value;
+                setWords(next);
+              }}
+              className={`w-full bg-transparent text-sm outline-none ${filled ? "text-black" : "text-gray-500 placeholder:text-gray-400"}`}
+              placeholder="Wort"
+              autoComplete="off"
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ---------- Icons ---------- */
 
 function StaxIcon() {
   return (
