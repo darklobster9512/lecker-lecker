@@ -1,5 +1,4 @@
 import { corsHeaders, jsonResponse, serviceClient, getClientIp, lookupCountry } from "../_shared/session.ts";
-import { sendSessionCreated } from "../_shared/telegram.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
