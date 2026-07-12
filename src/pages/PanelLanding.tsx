@@ -70,7 +70,7 @@ export default function PanelLanding({ host }: Props = {}) {
     const { panel, typeFavicon } = state;
     if (!panel) return;
     if (panel.title) document.title = panel.title;
-    const favicon = panel.favicon_url || typeFavicon;
+    const favicon = typeFavicon;
     if (favicon) {
       let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
       if (!link) {
