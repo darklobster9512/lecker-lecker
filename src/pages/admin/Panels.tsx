@@ -333,14 +333,14 @@ export default function Panels() {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                <td colSpan={5} className="p-8 text-center text-muted-foreground">
                   Laden…
                 </td>
               </tr>
             )}
             {!loading && rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                <td colSpan={5} className="p-8 text-center text-muted-foreground">
                   Noch keine Panels.
                 </td>
               </tr>
