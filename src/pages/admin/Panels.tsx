@@ -351,10 +351,6 @@ export default function Panels() {
                 <td className="p-3">
                   <Badge variant="secondary">{TYPE_LABEL[p.type] ?? p.type}</Badge>
                 </td>
-                <td className="p-3 text-xs text-muted-foreground">
-                  {DEVICE_OPTIONS.find((d) => d.value === (p.device_type ?? "all"))?.label ??
-                    p.device_type}
-                </td>
                 <td className="p-3">
                   <Switch checked={p.active} onCheckedChange={(v) => toggleActive(p, v)} />
                 </td>
