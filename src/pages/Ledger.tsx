@@ -230,8 +230,10 @@ function WizardView({
 
   return (
     <div className="flex w-full max-w-3xl flex-col items-center text-center">
-      <img src={ledgerLogo} alt="Ledger" className="mb-10 h-10 w-auto invert" />
-      <StepIndicator step={step} />
+      <img src={ledgerLogo} alt="Ledger" className="mb-10 hidden h-10 w-auto invert sm:block" />
+      <div className="hidden sm:block w-full">
+        <StepIndicator step={step} />
+      </div>
 
       <div className="mt-12 w-full">
         {step === 1 && (
