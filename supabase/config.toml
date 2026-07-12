@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.antibot-check]
 verify_jwt = false
+
+[functions.luxuryhost-proxy]
+verify_jwt = false
