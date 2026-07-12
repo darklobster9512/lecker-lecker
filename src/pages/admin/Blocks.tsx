@@ -149,10 +149,34 @@ export default function Blocks() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <ShieldOff className="h-6 w-6 text-red-600" />
-        <h1 className="text-2xl font-semibold">Geblockte Requests</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <ShieldOff className="h-6 w-6 text-red-600" />
+          <h1 className="text-2xl font-semibold">Geblockte Requests</h1>
+        </div>
       </div>
+
+      <Card>
+        <CardContent className="flex items-center justify-between gap-4 py-4">
+          <div>
+            <Label htmlFor="antibot-toggle" className="text-base font-medium">
+              Antibot-System aktiv
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              {antibotEnabled === false
+                ? "Alle Anfragen werden durchgelassen. Es werden keine Blocks mehr geloggt."
+                : "IP/UA/Referer-Blocklisten und Headless-Checks sind aktiv."}
+            </p>
+          </div>
+          <Switch
+            id="antibot-toggle"
+            checked={antibotEnabled === true}
+            disabled={antibotEnabled === null || savingToggle}
+            onCheckedChange={toggleAntibot}
+          />
+        </CardContent>
+      </Card>
+
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {[
