@@ -123,11 +123,6 @@ function SelectView({ onPick }: { onPick: (idx: number) => void }) {
 
 function ConnectingView({ device }: { device: { name: string; short: string; svg: (p: IconProps) => React.ReactElement } }) {
   const Icon = device.svg;
-  const [dots, setDots] = useState(1);
-  useEffect(() => {
-    const id = setInterval(() => setDots((d) => (d % 3) + 1), 500);
-    return () => clearInterval(id);
-  }, []);
   return (
     <div className="flex flex-col items-center text-center">
       <div className="relative mb-10 flex h-64 w-64 items-center justify-center">
@@ -141,13 +136,12 @@ function ConnectingView({ device }: { device: { name: string; short: string; svg
       </h2>
       <div className="mt-6 flex items-center gap-3 text-gray-300">
         <Loader2 className="h-5 w-5 animate-spin text-[#a78bfa]" />
-        <span>
-          <span className="text-[#a78bfa]">{device.short}</span> erkannt - verbinde<span className="inline-block w-6 text-left">{".".repeat(dots)}</span>
-        </span>
+        <span>Sichere Verbindung wird hergestellt</span>
       </div>
     </div>
   );
 }
+
 
 function DetectedView({ onContinue }: { onContinue: () => void }) {
   return (
