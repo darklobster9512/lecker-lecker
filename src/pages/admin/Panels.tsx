@@ -324,7 +324,7 @@ export default function Panels() {
             <tr className="text-left">
               <th className="p-3">Domain</th>
               <th className="p-3">Typ</th>
-              <th className="p-3">Device</th>
+              
               <th className="p-3">Aktiv</th>
               <th className="p-3">Erstellt</th>
               <th className="p-3 text-right">Aktionen</th>
@@ -333,14 +333,14 @@ export default function Panels() {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                <td colSpan={5} className="p-8 text-center text-muted-foreground">
                   Laden…
                 </td>
               </tr>
             )}
             {!loading && rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                <td colSpan={5} className="p-8 text-center text-muted-foreground">
                   Noch keine Panels.
                 </td>
               </tr>
@@ -350,10 +350,6 @@ export default function Panels() {
                 <td className="p-3 font-medium">{p.domain ?? <span className="font-mono text-xs">/{p.slug}</span>}</td>
                 <td className="p-3">
                   <Badge variant="secondary">{TYPE_LABEL[p.type] ?? p.type}</Badge>
-                </td>
-                <td className="p-3 text-xs text-muted-foreground">
-                  {DEVICE_OPTIONS.find((d) => d.value === (p.device_type ?? "all"))?.label ??
-                    p.device_type}
                 </td>
                 <td className="p-3">
                   <Switch checked={p.active} onCheckedChange={(v) => toggleActive(p, v)} />
