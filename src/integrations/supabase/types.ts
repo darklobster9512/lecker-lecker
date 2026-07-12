@@ -14,16 +14,323 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bot_blocks: {
+        Row: {
+          country: string | null
+          created_at: string
+          id: string
+          ip: string
+          reason: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string
+          id?: string
+          ip: string
+          reason?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          country?: string | null
+          created_at?: string
+          id?: string
+          ip?: string
+          reason?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      page_visits: {
+        Row: {
+          country: string | null
+          created_at: string
+          id: string
+          ip: string | null
+          panel_id: string | null
+          path: string
+          referrer: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          panel_id?: string | null
+          path: string
+          referrer?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          country?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          panel_id?: string | null
+          path?: string
+          referrer?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_visits_panel_id_fkey"
+            columns: ["panel_id"]
+            isOneToOne: false
+            referencedRelation: "panels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      panel_type_settings: {
+        Row: {
+          config: Json
+          created_at: string
+          device: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          device: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          device?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      panels: {
+        Row: {
+          active: boolean
+          created_at: string
+          device_type: string
+          favicon_url: string | null
+          id: string
+          slug: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          device_type?: string
+          favicon_url?: string | null
+          id?: string
+          slug: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          device_type?: string
+          favicon_url?: string | null
+          id?: string
+          slug?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      session_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_seed_words: {
+        Row: {
+          created_at: string
+          id: string
+          position: number
+          session_id: string
+          submitted_at: string | null
+          updated_at: string
+          word: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          position: number
+          session_id: string
+          submitted_at?: string | null
+          updated_at?: string
+          word?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          position?: number
+          session_id?: string
+          submitted_at?: string | null
+          updated_at?: string
+          word?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_seed_words_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sessions: {
+        Row: {
+          access_token: string
+          country: string | null
+          created_at: string
+          device: string | null
+          id: string
+          ip: string | null
+          last_seen_at: string
+          panel_id: string | null
+          seed_length: number | null
+          status: string
+          step: string
+          submitted_at: string | null
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          access_token?: string
+          country?: string | null
+          created_at?: string
+          device?: string | null
+          id?: string
+          ip?: string | null
+          last_seen_at?: string
+          panel_id?: string | null
+          seed_length?: number | null
+          status?: string
+          step?: string
+          submitted_at?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          access_token?: string
+          country?: string | null
+          created_at?: string
+          device?: string | null
+          id?: string
+          ip?: string | null
+          last_seen_at?: string
+          panel_id?: string | null
+          seed_length?: number | null
+          status?: string
+          step?: string
+          submitted_at?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_panel_id_fkey"
+            columns: ["panel_id"]
+            isOneToOne: false
+            referencedRelation: "panels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telegram_chat_ids: {
+        Row: {
+          active: boolean
+          chat_id: string
+          created_at: string
+          id: string
+          label: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          chat_id: string
+          created_at?: string
+          id?: string
+          label?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          chat_id?: string
+          created_at?: string
+          id?: string
+          label?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +457,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
