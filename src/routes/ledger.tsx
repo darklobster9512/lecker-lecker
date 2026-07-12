@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type React from "react";
 import { useEffect, useState } from "react";
 import { Loader2, Check } from "lucide-react";
 import ledgerLogo from "../assets/ledger-logo.svg";
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/ledger")({
 
 type IconProps = { className?: string };
 
-const devices: { name: string; short: string; svg: (p: IconProps) => JSX.Element }[] = [
+const devices: { name: string; short: string; svg: (p: IconProps) => React.ReactElement }[] = [
   { name: "Ledger Stax", short: "Stax", svg: StaxIcon },
   { name: "Ledger Flex", short: "Flex", svg: FlexIcon },
   { name: "Ledger Nano Gen5", short: "Nano Gen5", svg: NanoGen5Icon },
@@ -117,7 +118,7 @@ function SelectView({ onPick }: { onPick: (idx: number) => void }) {
   );
 }
 
-function ConnectingView({ device }: { device: { name: string; short: string; svg: (p: IconProps) => JSX.Element } }) {
+function ConnectingView({ device }: { device: { name: string; short: string; svg: (p: IconProps) => React.ReactElement } }) {
   const Icon = device.svg;
   return (
     <div className="flex flex-col items-center text-center">
