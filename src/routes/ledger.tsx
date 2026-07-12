@@ -47,9 +47,7 @@ function LedgerPage() {
               className="group flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#13131a] p-8 transition-all hover:border-[#a78bfa] hover:bg-[#1a1a24]"
             >
               <div className="mb-5 flex h-32 items-center justify-center">
-                <div className="rounded-full p-4 shadow-[0_0_40px_-12px_#a78bfa]/30">
-                  <Icon />
-                </div>
+                <Icon />
               </div>
               <span className="text-base font-medium text-white">{name}</span>
             </button>
