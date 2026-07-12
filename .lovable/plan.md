@@ -1,21 +1,30 @@
 Aufbau:
 
-1. **Hero Section in `src/routes/index.tsx` ersetzen**
-   - Entferne den aktuellen Placeholder (`data-lovable-blank-page-placeholder`-Bild).
-   - Füge eine zentrierte Hero Section ein mit:
-     - Hauptüberschrift: „Domain wird eingerichtet“
-     - Untertitel: kurzer erklärender Satz, z.B. „Diese Webseite ist bald erreichbar. Wir richten gerade alles für dich ein."
-     - Visuelles Element: ein kleines Spinner/Loader-Icon oder ein einfacher Status-Indikator.
-   - Styling ausschließlich über die vorhandenen Design-Tokens (Hintergrund, Text, Akzentfarbe), keine hartkodierten Farben.
+1. **Logo als SVG-Asset speichern**
+   - Das hochgeladene SVG-Logo (`user-uploads://logo.svg`) wird als `src/assets/ledger-logo.svg` in den Projektcode kopiert.
+   - Da es sich um ein kleines SVG handelt, das als React-Komponente / Inline-Quelle verwendet wird, bleibt es im Repository (kein Lovable-Asset notwendig).
 
-2. **Head-Metadaten in `src/routes/__root.tsx` anpassen**
-   - `title` und `description` auf Deutsch setzen, z.B.: „Domain wird eingerichtet | [Name/Projekt]" und „Diese Webseite wird derzeit eingerichtet."
-   - Passende `og:title` / `og:description` / `twitter:*`-Tags synchronisieren.
-   - Kein `og:image` setzen, da es kein passendes Bild gibt – der Hosting-Provider kann dann ein generiertes Social Preview verwenden.
+2. **Neue Route `/ledger` erstellen**
+   - Datei: `src/routes/ledger.tsx` (oder `src/routes/ledger.index.tsx` bei Bedarf).
+   - `createFileRoute("/ledger")` mit eigenem `head()` für deutsche Metadaten.
 
-3. **Keine zusätzlichen Dependencies oder Seiten**
-   - Es bleibt bei einer einzigen Route (`/`). Keine Navigation, keine weiteren Sections, keine Backend-Änderungen.
+3. **Komponente für `/ledger` bauen**
+   - Komplettes Darktheme: Hintergrund dunkel, Text hell.
+   - Akzentfarbe Lila `#a78bfa` wird als Tailwind-Utility/Design-Token verwendet (z. B. `border-[#a78bfa]`, `text-[#a78bfa]` im CSS-Theme oder `ring-violet-400` – passend zum Darktheme).
+   - Alles mittig zentriert.
+   - Oben: Ledger-Logo, mittig zentriert.
+   - Titel: „Choose your Ledger device".
+   - Untertitel: „Select the device you own to connect securely and continue.".
+   - 3×2 Grid mit 6 Cards:
+     - Stax, Flex, Nano Gen5, Nano S, Nano S Plus, Nano X.
+     - Jedes SVG-Icon wird inline in die Karte eingefügt.
+     - Hover: Card bekommt Outline in der lila Akzentfarbe.
+   - Klick auf Cards hat keinen funktionalen Effekt, nur den Hover-Effekt.
 
-4. **Verifikation**
-   - Build laufen lassen, um sicherzustellen, dass keine TypeScript-/Import-Fehler entstehen.
-   - Screenshot/Preview prüfen, ob die Hero Section zentriert und lesbar ist.
+4. **Styling-Details**
+   - Kein `style={{ backgroundColor: "..." }}` – ausschließlich Tailwind-Utilities.
+   - Für die lila Farbe: `border-[#a78bfa]` / `text-[#a78bfa]` im Componenten-Code oder ggf. über `@theme` als `--color-accent` registrieren, wenn die Farbe systematisch verwendet werden soll. Für diese eine Seite reichen Utility-Klassen.
+
+5. **Verifikation**
+   - Build ausführen, um sicherzustellen, dass keine Import- oder Syntax-Fehler auftreten.
+   - Preview prüfen: Logo oben zentriert, Titel/Untertitel mittig, 3×2 Grid korrekt, Hover-Outline in Lila.
