@@ -145,17 +145,6 @@ export default function PanelTypeEditor({
             </div>
           )}
         </div>
-          {faviconUrl && (
-            <div className="flex items-center gap-3 rounded border p-3 bg-muted/30">
-              <img
-                src={faviconUrl}
-                alt=""
-                className="h-10 w-10 rounded border bg-background object-contain"
-              />
-              <span className="text-xs text-muted-foreground">Vorschau</span>
-            </div>
-          )}
-        </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Abbrechen
