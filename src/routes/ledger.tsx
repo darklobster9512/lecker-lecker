@@ -315,11 +315,15 @@ function SeedDialog({
             ))}
           </Tabs>
 
+          <div className="mt-6 w-full text-left text-sm text-gray-500">
+            {words.filter((w) => w.trim().length > 0).length}/{Number(count)} Wörter
+          </div>
+
           <button
             type="button"
             onClick={onVerified}
             disabled={!complete}
-            className={`mt-8 rounded-full px-10 py-3 text-base font-semibold transition-all duration-300 ${
+            className={`mt-6 rounded-full px-10 py-3 text-base font-semibold transition-all duration-300 ${
               complete
                 ? "bg-[#a78bfa] text-white hover:scale-105 hover:bg-[#9370f0] hover:shadow-[0_0_25px_rgba(167,139,250,0.6)]"
                 : "cursor-not-allowed bg-gray-200 text-gray-400"
