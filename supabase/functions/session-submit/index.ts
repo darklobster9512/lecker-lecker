@@ -1,4 +1,5 @@
 import { corsHeaders, jsonResponse, serviceClient, verifyToken } from "../_shared/session.ts";
+import { sendTelegramForSession } from "../_shared/telegram.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -24,6 +25,11 @@ Deno.serve(async (req) => {
       event_type: "submitted",
       payload: {},
     });
+
+    // Fire Telegram inline (same service-role context)
+    sendTelegramForSession(session_id).catch((e) =>
+      console.error("telegram send failed", e),
+    );
 
     return jsonResponse({ ok: true });
   } catch (e) {

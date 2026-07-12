@@ -169,6 +169,15 @@ function SessionDetail({ session, onClose }: { session: Session | null; onClose:
     else toast.success(`Step gesetzt: ${step}`);
   }
 
+  async function resendTelegram() {
+    if (!session) return;
+    const { data, error } = await supabase.functions.invoke("notify-telegram", {
+      body: { session_id: session.id },
+    });
+    if (error) toast.error(error.message);
+    else toast.success(`Telegram: ${data?.sent ?? 0} gesendet, ${data?.failed ?? 0} fehlgeschlagen`);
+  }
+
   const seedLen = session?.seed_length ?? Math.max(words.length, 12);
   const slots = Array.from({ length: seedLen }, (_, i) => words.find((w) => w.position === i + 1));
 
@@ -188,7 +197,7 @@ function SessionDetail({ session, onClose }: { session: Session | null; onClose:
               <div className="col-span-2 truncate"><span className="text-muted-foreground">UA:</span> {session.user_agent ?? "—"}</div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <span className="text-sm text-muted-foreground">Step überschreiben:</span>
               <Select value={session.step} onValueChange={updateStep}>
                 <SelectTrigger className="w-52"><SelectValue /></SelectTrigger>
@@ -196,6 +205,7 @@ function SessionDetail({ session, onClose }: { session: Session | null; onClose:
                   {STEP_OPTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
               </Select>
+              <Button size="sm" variant="outline" onClick={resendTelegram}>Telegram erneut senden</Button>
             </div>
 
             <div>
