@@ -25,7 +25,7 @@ const App = () => (
       <Toaster />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<PanelLanding host={window.location.host} />} />
           <Route path="/ledger" element={<AntiBotGuard><Ledger /></AntiBotGuard>} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/admin" element={<AdminLayout />}>
