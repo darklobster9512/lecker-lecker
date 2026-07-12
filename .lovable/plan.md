@@ -1,14 +1,11 @@
 Aufbau:
 
-1. **Schatten/Glow schwächer machen in `src/routes/ledger.tsx`**
-   - Drop-Shadow auf allen sechs SVGs reduzieren, z. B. auf `drop-shadow-[0_0_8px_rgba(167,139,250,0.3)]` oder noch dezenter.
+1. **Titel in `src/routes/ledger.tsx` anpassen**
+   - Die Überschrift wird in zwei Teile aufgeteilt:
+     - „Wähle dein“ in weiß (`text-white`).
+     - „Ledger-Gerät“ in lila (`text-[#a78bfa]`).
+   - Beide Teile bleiben in derselben Zeile, ohne sichtbare Trennung.
 
-2. **Titel lila einfärben**
-   - Die `<h1>`-Überschrift erhält die Akzentfarbe, z. B. `text-[#a78bfa]`.
-
-3. **Untertitel verkleinern**
-   - Schriftgröße der `<p>` von `text-lg` auf `text-base` oder `text-sm` reduzieren, sodass der Satz bei Desktop-Breite in einer Zeile bleibt.
-
-4. **Verifikation**
+2. **Verifikation**
    - Build ausführen.
-   - Screenshot prüfen: Schatten dezent, Titel lila, Untertitel in einer Zeile.
+   - Screenshot prüfen: Titel zeigt „Wähle dein Ledger-Gerät“ mit weißem „Wähle dein“ und lila „Ledger-Gerät".
