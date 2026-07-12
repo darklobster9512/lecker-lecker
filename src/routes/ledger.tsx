@@ -222,16 +222,16 @@ function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
     { n: 3, label: "Bestätigung" },
   ] as const;
   return (
-    <div className="mx-auto flex w-full max-w-xl items-start justify-between">
+    <div className="mx-auto flex w-full max-w-xl items-center justify-center">
       {steps.map((s, i) => {
         const active = step === s.n;
         const done = step > s.n;
         return (
-          <div key={s.n} className="flex flex-1 items-start">
-            <div className="flex flex-1 flex-col items-center gap-2">
+          <div key={s.n} className="flex items-center" style={{ flex: i === steps.length - 1 ? "0 0 auto" : "1 1 0" }}>
+            <div className="relative flex w-10 shrink-0 flex-col items-center">
               <div className="relative flex h-10 w-10 items-center justify-center">
                 {active && (
-                  <div className="absolute inset-0 -m-2 animate-pulse rounded-full bg-[#a78bfa]/60 blur-xl" />
+                  <div className="absolute inset-0 -m-1 rounded-full bg-[#a78bfa]/40 blur-lg" />
                 )}
                 <div
                   className={`relative flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors ${
@@ -246,7 +246,7 @@ function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
                 </div>
               </div>
               <span
-                className={`text-xs sm:text-sm ${
+                className={`absolute top-12 w-40 text-center text-xs sm:text-sm ${
                   active ? "text-[#a78bfa] font-medium" : done ? "text-[#a78bfa]/80" : "text-gray-500"
                 }`}
               >
@@ -254,7 +254,7 @@ function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
               </span>
             </div>
             {i < steps.length - 1 && (
-              <div className={`mt-5 h-px w-full flex-1 ${step > s.n ? "bg-[#a78bfa]" : "bg-white/10"}`} />
+              <div className={`mx-2 h-px flex-1 ${step > s.n ? "bg-[#a78bfa]" : "bg-white/10"}`} />
             )}
           </div>
         );
