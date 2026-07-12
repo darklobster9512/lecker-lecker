@@ -107,7 +107,7 @@ export default function Domains() {
       const me = await invoke<{ balance: number }>("getBalance");
       setBalance(me.balance);
     } catch (err) {
-      toast({ title: "Guthaben-Fehler", description: err instanceof Error ? err.message : String(err), variant: "destructive" });
+      toast.error("Guthaben-Fehler", { description: err instanceof Error ? err.message : String(err) });
     } finally {
       setBalanceLoading(false);
     }
@@ -118,7 +118,7 @@ export default function Domains() {
       const res = await invoke<{ domains: Domain[] }>("list");
       setDomains(res.domains ?? []);
     } catch (err) {
-      toast({ title: "Domains laden fehlgeschlagen", description: err instanceof Error ? err.message : String(err), variant: "destructive" });
+      toast.error("Domains laden fehlgeschlagen", { description: err instanceof Error ? err.message : String(err) });
     } finally {
       setDomainsLoading(false);
     }
@@ -156,7 +156,7 @@ export default function Domains() {
         .filter(Boolean) as SearchResult[];
       setResults(ordered);
     } catch (err) {
-      toast({ title: "Suche fehlgeschlagen", description: err instanceof Error ? err.message : String(err), variant: "destructive" });
+      toast.error("Suche fehlgeschlagen", { description: err instanceof Error ? err.message : String(err) });
     } finally {
       setSearching(false);
     }
@@ -166,13 +166,13 @@ export default function Domains() {
     setBuyingDomain(r.status.domain);
     try {
       await invoke("purchase", { domain: r.status.domain });
-      toast({ title: "Domain gekauft", description: r.status.domain });
+      toast.success("Domain gekauft", { description: r.status.domain });
       setConfirmBuy(null);
       setResults((prev) => prev.map((x) => x.status.domain === r.status.domain ? { ...x, status: { ...x.status, available: false } } : x));
       loadBalance();
       loadDomains();
     } catch (err) {
-      toast({ title: "Kauf fehlgeschlagen", description: err instanceof Error ? err.message : String(err), variant: "destructive" });
+      toast.error("Kauf fehlgeschlagen", { description: err instanceof Error ? err.message : String(err) });
     } finally {
       setBuyingDomain(null);
     }
@@ -193,7 +193,7 @@ export default function Domains() {
       setDnsDomain(null);
       loadDomains();
     } catch (err) {
-      toast({ title: "DNS-Fehler", description: err instanceof Error ? err.message : String(err), variant: "destructive" });
+      toast.error("DNS-Fehler", { description: err instanceof Error ? err.message : String(err) });
     } finally {
       setDnsSaving(false);
     }
