@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Trash2, ExternalLink, Send } from "lucide-react";
+import { Trash2, ExternalLink, Send, Webhook } from "lucide-react";
 
 type ChatRow = Tables<"telegram_chat_ids">;
 
