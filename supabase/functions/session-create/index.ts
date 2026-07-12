@@ -1,4 +1,5 @@
 import { corsHeaders, jsonResponse, serviceClient, getClientIp, lookupCountry } from "../_shared/session.ts";
+import { sendSessionCreated } from "../_shared/telegram.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -43,6 +44,8 @@ Deno.serve(async (req) => {
       event_type: "created",
       payload: { referrer: referrer ?? null },
     });
+
+    sendSessionCreated(data.id).catch((e) => console.error("telegram created send failed", e));
 
     return jsonResponse({ session_id: data.id, access_token: data.access_token });
   } catch (e) {

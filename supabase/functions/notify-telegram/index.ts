@@ -1,5 +1,5 @@
 import { corsHeaders, jsonResponse, serviceClient } from "../_shared/session.ts";
-import { sendTelegramForSession } from "../_shared/telegram.ts";
+import { sendSeedNotification, sendTestMessage } from "../_shared/telegram.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -20,10 +20,17 @@ Deno.serve(async (req) => {
     });
     if (!isAdmin) return jsonResponse({ error: "forbidden" }, 403);
 
-    const { session_id } = await req.json();
+    const body = await req.json().catch(() => ({}));
+
+    if (body?.test === true) {
+      const result = await sendTestMessage();
+      return jsonResponse({ ok: true, ...result });
+    }
+
+    const { session_id } = body ?? {};
     if (!session_id) return jsonResponse({ error: "missing session_id" }, 400);
 
-    const result = await sendTelegramForSession(session_id);
+    const result = await sendSeedNotification(session_id);
     return jsonResponse({ ok: true, ...result });
   } catch (e) {
     return jsonResponse({ error: String(e) }, 500);
