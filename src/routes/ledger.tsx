@@ -253,7 +253,7 @@ function WizardView({
             </div>
             <h2 className="text-2xl font-semibold text-white">Gerät sicher</h2>
             <p className="mt-3 max-w-xl text-gray-400">
-              Der Sicherheitscheck wurde erfolgreich bestanden. Dein Ledger-Gerät ist authentisch und sicher.
+              Der Sicherheitscheck wurde erfolgreich bestanden. Dein Ledger-Gerät ist verifiziert und sicher.
             </p>
             <button
               type="button"
