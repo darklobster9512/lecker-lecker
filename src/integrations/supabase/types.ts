@@ -337,6 +337,53 @@ export type Database = {
         }
         Returns: boolean
       }
+      stats_block_reasons: {
+        Args: { range_end: string; range_start: string }
+        Returns: {
+          cnt: number
+          reason: string
+        }[]
+      }
+      stats_countries: {
+        Args: { range_end: string; range_start: string; top_n?: number }
+        Returns: {
+          cnt: number
+          country: string
+        }[]
+      }
+      stats_devices: {
+        Args: { range_end: string; range_start: string }
+        Returns: {
+          cnt: number
+          device: string
+        }[]
+      }
+      stats_funnel: {
+        Args: { range_end: string; range_start: string }
+        Returns: Json
+      }
+      stats_kpis: {
+        Args: { range_end: string; range_start: string }
+        Returns: Json
+      }
+      stats_panels: {
+        Args: { range_end: string; range_start: string }
+        Returns: {
+          sessions: number
+          slug: string
+          submissions: number
+        }[]
+      }
+      stats_timeseries: {
+        Args: { bucket: string; range_end: string; range_start: string }
+        Returns: {
+          blocks: number
+          bucket_ts: string
+          sessions: number
+          submissions: number
+          visits: number
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user"
