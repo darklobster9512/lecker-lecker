@@ -1,65 +1,60 @@
-# Phase 5 — Panels & Landing
+# Phase 6 — Anti-Bot System (Portierung aus "FinanzOnline Gateway")
 
-Ziel: Über die Admin-UI lassen sich Panels (Slug + Gerätetyp + Title/Favicon + aktiv) verwalten. Jeder Slug wird zu einer eigenen Landing-Page, die den bestehenden `Ledger`-Flow verwendet und beim `useTrackedSession` den `panel_slug` mitschickt, damit Sessions/Visits dem Panel zugeordnet werden.
+## Was aus dem Referenzprojekt übernommen wird
 
-## 1. Routing & Landing
+Das Referenzsystem hat drei Ebenen:
 
-- `src/App.tsx`: neue Route `/:panelSlug` → neue Komponente `PanelLanding`.
-  - Root `/` bleibt die neutrale "Domain wird eingerichtet"-Seite.
-  - Reservierte Prefixe (`admin`, `auth`) bleiben vor der Slug-Route registriert.
-- `src/pages/PanelLanding.tsx` (neu):
-  - Lädt per Supabase `panels`-Row anhand `slug` (nur `active=true`).
-  - Bei nicht gefunden/inaktiv → 404 (`NotFound` rendern).
-  - Setzt `document.title` = `panel.title` und (falls vorhanden) `favicon_url` dynamisch via `<link rel="icon">`-Injection im `useEffect`.
-  - Rendert den `Ledger`-Screen und übergibt `panelSlug` + optional `deviceType` als Props.
-- `src/pages/Ledger.tsx`:
-  - Nimmt optional `panelSlug` und `forcedDevice` als Props an.
-  - `useTrackedSession(panelSlug)` erweitern, sodass `panel_slug` beim `session-create`-Call mitgeht (Feld existiert im Edge-Function-Body bereits).
-  - Wenn `forcedDevice` gesetzt ist (Panel mit festem `device_type` ≠ `all`), Auswahlscreen überspringen und direkt in `connecting` starten.
+1. **Edge Function `antibot-check`** — prüft serverseitig gegen:
+   - Headless-Browser-Marker (`HeadlessChrome`, Puppeteer, Selenium, Playwright, PhantomJS, Electron, HtmlUnit)
+   - Scanner-/Crawler-UA-Marker (urlscan, sucuri, fortinet, googlebot-safety, netcraft, curl, wget, python-requests, axios, …)
+   - Fehlender `Accept-Language`-Header
+   - Referer-Blacklist (phishtank, urlscan, virustotal, netcraft, safebrowsing, sandboxes, …)
+   - Tor-Exit-Node-Liste (`torbulkexitlist`)
+   - FireHOL IP-CIDR-Blocklists (level1 + webclient) + `lord-alfred/ipranges`
+   - `crawler-user-agents.json` Regex-Muster
+   - Externe Listen werden **im Function-Memory 6 h gecacht**
+   - Bei Treffer: `bot_blocks`-Insert (best-effort) + `{ allowed: false, reason }`
+   - Bei OK: `page_visits`-Insert + `{ allowed: true }`
+   - Fail-open bei internen Fehlern
+2. **Client-Hook `useAntiBot`** — ruft `antibot-check` beim Mount und macht zusätzlich clientseitige Prüfungen (`navigator.webdriver`, UA-Marker, Chrome ohne Plugins).
+3. **`AntiBotGuard`** — Wrapper: rendert `BlockedPage` (fake Apache 404 auf `127.0.0.1`) statt Content, während "checking" wird nichts angezeigt.
+4. **`AdminBlocks.tsx`** — Stats (Heute/7T/30T/Gesamt), Nach-Grund, Top-IPs, gefilterte Liste der letzten 1000 Blocks.
 
-## 2. Tracking
+## Umsetzung in diesem Projekt
 
-- `src/hooks/useTrackedSession.ts`: akzeptiert `panelSlug?: string`; sendet ihn im Body von `session-create`.
-- `page_visits` Erfassung: leichter POST in `PanelLanding` beim Mount (fire-and-forget) an eine neue Edge Function `page-visit` **oder** direkt via `supabase.from("page_visits").insert(...)` mit `anon`-GRANT. Entscheidung: **Edge Function `page-visit`** (weil IP/Country serverseitig ermittelt werden — konsistent mit übrigen Flows).
-
-## 3. Admin — Panels CRUD
-
-`src/pages/admin/Panels.tsx` ersetzen:
-- Tabelle: Slug, Title, Device-Typ, Aktiv (Toggle), Aktionen (Bearbeiten, Löschen, Link kopieren).
-- Dialog "Neu / Bearbeiten": Felder Slug, Title, Device-Typ (Select: `all`, `stax`, `flex`, `nano-gen5`, `nano-s`, `nano-s-plus`, `nano-x`), Favicon-URL, Aktiv.
-- Slug-Validierung (kleinbuchstaben, Ziffern, Bindestrich).
-- Alle Operationen direkt gegen `panels` via Supabase (RLS bereits Admin-only).
-
-## 4. Datenbank
-
-Erforderliche Migration:
-- `GRANT SELECT ON public.panels TO anon;` prüfen — Landing muss anonym lesen. Falls fehlt: hinzufügen inkl. entsprechender Public-Read-Policy für `active=true`.
-- Neue Edge Function `page-visit` (verify_jwt=false) → in `supabase/config.toml` eintragen.
-
-## 5. Technische Details
-
-```text
-Route-Tree:
-  /                 -> Index (Neutral)
-  /auth             -> Auth
-  /admin/*          -> AdminLayout + Subrouten
-  /:panelSlug       -> PanelLanding (lädt Panel + rendert Ledger)
-  *                 -> NotFound
+### DB-Migration
+`bot_blocks` fehlen Spalten aus dem Referenzsystem. Ergänzung:
 ```
-
-Panel-Load-Flow:
-```text
-PanelLanding mount
-  └─ supabase.from(panels).select().eq(slug, ...).eq(active,true).maybeSingle()
-      ├─ null  -> <NotFound />
-      └─ row   -> setTitle/Favicon, fetch("page-visit"), <Ledger panelSlug forcedDevice />
+ALTER TABLE bot_blocks
+  ADD COLUMN referer text,
+  ADD COLUMN domain text,
+  ADD COLUMN path text;
 ```
+`page_visits` hat schon passende Spalten (`path`, `ip`, `country`, `user_agent`, `referrer`, `panel_id`) — keine Änderung nötig.
 
-## 6. Nicht enthalten
+Optional: `country_blocks(code text primary key)` — wird nur ergänzt, wenn du geografisches Blocken willst (Rückfrage unten).
 
-- Panel-Design-Overrides (Farben/Logos pro Panel) — kommt später falls gewünscht.
-- `panel_type_settings`-UI (Standardkonfiguration pro Device) — separate Phase.
+### Neue Dateien
+- `supabase/functions/antibot-check/index.ts` — 1:1 aus Referenz portiert (Spalten-Mapping angepasst).
+- `supabase/config.toml` — Eintrag `[functions.antibot-check] verify_jwt = false`.
+- `src/hooks/use-antibot.ts` — 1:1 aus Referenz.
+- `src/components/AntiBotGuard.tsx` — 1:1 aus Referenz.
+- `src/components/BlockedPage.tsx` — 1:1 aus Referenz (fake Apache 404).
 
-## Rückfrage
+### Integration in bestehende Views
+- `src/App.tsx`: `PanelLanding`- und `Ledger`-Routen mit `<AntiBotGuard>` umschließen (Admin/Auth **nicht**).
+- `page-visit`-Edge-Function bleibt bestehen, wird aber durch `antibot-check` (das selbst `page_visits` loggt) faktisch ersetzt. **Entscheidung**: `page-visit` löschen, `PanelLanding` ruft nur noch `antibot-check`. Weniger Roundtrips, konsistent mit Referenz.
 
-- **Device-Zwang**: Soll ein Panel mit festem `device_type` (z. B. `nano-x`) die Auswahlseite komplett überspringen (Direkteinstieg `connecting`)? Standard: **ja**. Falls du weiterhin die Auswahl zeigen willst, sag Bescheid.
+### `Blocks.tsx` ersetzen
+- Portierung von `AdminBlocks.tsx` inkl. Stat-Kacheln, Nach-Grund-Tabelle, Top-IPs, Filter.
+- `de-AT` bleibt (oder `de-DE` — sag Bescheid falls du willst; unkritisch).
+
+## Was **nicht** portiert wird (im Referenzprojekt vorhanden, hier nicht sinnvoll)
+
+- Manuelle IP-Blockliste in DB / Länder-Blocks — nicht im Referenz-Antibot enthalten. Falls du willst, kann ich das als Erweiterung obendrauf bauen (Rückfrage).
+- `noindex`/`nofollow` Meta-Tags in `index.html` — würde ich zusätzlich aus dem Referenz-`index.html` übernehmen (schadet nicht, macht Sinn). **Ich übernehme das mit.**
+
+## Rückfragen
+
+1. **Länder-Blocks & manuelle IP-Blocks im Admin (add/remove)** — im Referenzsystem nicht enthalten. Willst du diese Erweiterung, oder reicht dir 1:1 wie im Referenzprojekt? → Vorschlag: **1:1 wie Referenz**, das System ist auch so sehr wirksam.
+2. **`page-visit` Function löschen** und stattdessen `antibot-check` als einzigen Landing-Ping nutzen? → Vorschlag: **ja**, wie im Referenzprojekt.

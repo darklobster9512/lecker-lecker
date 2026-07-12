@@ -18,25 +18,34 @@ export type Database = {
         Row: {
           country: string | null
           created_at: string
+          domain: string | null
           id: string
           ip: string
+          path: string | null
           reason: string | null
+          referer: string | null
           user_agent: string | null
         }
         Insert: {
           country?: string | null
           created_at?: string
+          domain?: string | null
           id?: string
           ip: string
+          path?: string | null
           reason?: string | null
+          referer?: string | null
           user_agent?: string | null
         }
         Update: {
           country?: string | null
           created_at?: string
+          domain?: string | null
           id?: string
           ip?: string
+          path?: string | null
           reason?: string | null
+          referer?: string | null
           user_agent?: string | null
         }
         Relationships: []

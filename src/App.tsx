@@ -15,6 +15,7 @@ import Stats from "./pages/admin/Stats";
 import Telegram from "./pages/admin/Telegram";
 import Panels from "./pages/admin/Panels";
 import Domains from "./pages/admin/Domains";
+import AntiBotGuard from "./components/AntiBotGuard";
 
 const queryClient = new QueryClient();
 
@@ -25,7 +26,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/ledger" element={<Ledger />} />
+          <Route path="/ledger" element={<AntiBotGuard><Ledger /></AntiBotGuard>} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
