@@ -67,6 +67,7 @@ export default function Telegram() {
 
   useEffect(() => {
     load();
+    loadWebhookInfo();
   }, []);
 
   async function add() {
