@@ -108,7 +108,7 @@ function SelectView({ onPick }: { onPick: (idx: number) => void }) {
             key={name}
             type="button"
             onClick={() => onPick(i)}
-            className="group flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#13131a] p-8 transition-all hover:border-[#a78bfa] hover:bg-[#1a1a24]"
+            className="group flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#13131a] p-8 transition-all hover:border-[#a78bfa] hover:bg-[#1a1a24]"
           >
             <div className="mb-5 flex h-32 items-center justify-center">
               <Icon />
