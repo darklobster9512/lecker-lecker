@@ -1,30 +1,26 @@
 ## Ziel
-Telegram-Bot-Befehle `/on` und `/off`, die alle Panels in `public.panels` gleichzeitig aktivieren bzw. deaktivieren, mit Bestätigungsantwort an den Telegram-Chat.
+Button auf der Telegram-Admin-Seite, der den Telegram-Webhook automatisch registriert — ohne dass der User Token/Secret irgendwo einfügen muss.
 
 ## Umsetzung
 
-### 1. Neue Edge Function `supabase/functions/telegram-webhook/index.ts` (public, keine JWT)
-- Nimmt Telegram-Webhook-Updates entgegen (POST).
-- Sicherheit: erwartet Header `X-Telegram-Bot-Api-Secret-Token` = Wert des neuen Secrets `TELEGRAM_WEBHOOK_SECRET`. Bei Mismatch → 200 mit `{ ok: true }` (ignoriert), damit Telegram nicht retryt.
-- Parst `message.text` und `message.chat.id`.
-- Optional whitelist: nur Chats, deren `chat_id` in `telegram_chat_ids` mit `active = true` existiert; sonst kurze Antwort „nicht autorisiert" per `sendMessage`.
-- Befehle (case-insensitive, akzeptiert `/on`, `/off`, `/on@BotName`, `/off@BotName`):
-  - `/off`: `update panels set active = false` → Antwort: `🔴 Alle Panels sind jetzt OFFLINE (n Panels deaktiviert).`
-  - `/on`: `update panels set active = true` → Antwort: `🟢 Alle Panels sind jetzt ONLINE (n Panels aktiviert).`
-  - Unbekannt → keine Antwort (oder Kurzhinweis).
-- Antwort per Telegram Bot API `sendMessage` an den gleichen `chat_id`, `parse_mode: HTML`.
-- Wird auch in `supabase/config.toml` als `verify_jwt = false` eingetragen.
+### 1. Erweiterung `supabase/functions/telegram-webhook/index.ts`
+Zusätzlicher Setup-Modus auf demselben Endpoint:
+- Wenn Request `GET` mit `?action=info` → ruft `getWebhookInfo` bei Telegram auf und gibt das Ergebnis als JSON zurück.
+- Wenn Request `POST` mit JSON `{ "action": "setup" }` UND gültigem Supabase-Admin-JWT (Bearer-Header) → registriert den Webhook via `setWebhook` bei Telegram mit:
+  - `url` = `https://omfjjululuwbzadpypbc.functions.supabase.co/telegram-webhook`
+  - `secret_token` = `TELEGRAM_WEBHOOK_SECRET`
+  - `allowed_updates = ["message"]`
+- Admin-Check identisch zu `notify-telegram`: `auth.getUser(token)` + `has_role(user_id, 'admin')`.
+- Bestehender Telegram-Update-Pfad (POST mit Header `X-Telegram-Bot-Api-Secret-Token`) bleibt unverändert und wird zuerst geprüft.
 
-### 2. Secret + Webhook-Registrierung
-- Neues Secret `TELEGRAM_WEBHOOK_SECRET` (zufälliger String) via `secrets`-Tool.
-- Nach Deployment einmalig registrieren mit:
-  `https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://<project>.functions.supabase.co/telegram-webhook&secret_token=<SECRET>&allowed_updates=["message"]`
-  Der Registrierungs-Call wird dem User als Copy-Anleitung im Chat mitgeteilt (kein automatischer Curl, damit der Bot-Token nicht geloggt wird).
-
-### 3. Datenbank
-- Kein Schema-Change nötig. `panels.active` existiert bereits, Service-Role-Update ist erlaubt.
+### 2. UI-Änderung `src/pages/admin/Telegram.tsx`
+- Neuer Button „Webhook einrichten" oben rechts (neben „Testnachricht senden").
+- Klick → `supabase.functions.invoke("telegram-webhook", { body: { action: "setup" } })`.
+- Toast mit Ergebnis (URL, `ok`, ggf. Fehlermeldung von Telegram).
+- Kleine Status-Karte zeigt aktuellen Webhook-Status (URL, letzter Fehler) via GET `?action=info` beim Laden.
+- Die alte Einrichtungs-Anleitung wird um einen Hinweis ergänzt: „oder einfach unten auf ‚Webhook einrichten' klicken".
 
 ## Technische Details
-- Massenupdate via `supabase.from("panels").update({ active: <bool> }).neq("id", "00000000-0000-0000-0000-000000000000").select("id")` → Anzahl aus `data.length`.
-- Immer HTTP 200 zurückgeben, damit Telegram nicht retryt.
-- Keine Änderungen am Admin-UI; Panels-Seite spiegelt den neuen Zustand beim nächsten Reload.
+- Reihenfolge im Handler: 1) Setup-GET/POST prüfen (kein Telegram-Secret-Header); 2) sonst Telegram-Update mit Secret-Header-Validierung.
+- `verify_jwt = false` bleibt (nötig für Telegram-Updates). Admin-Auth wird manuell im Setup-Zweig geprüft.
+- CORS-Header für den GET/POST-Setup-Pfad hinzufügen, damit das Frontend rufen kann.
