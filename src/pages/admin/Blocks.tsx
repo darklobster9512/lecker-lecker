@@ -12,6 +12,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ShieldOff } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 interface BlockRow {
   id: string;
