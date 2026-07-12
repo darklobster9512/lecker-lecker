@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Navigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import Ledger, { LEDGER_DEVICE_SLUGS } from "./Ledger";
@@ -31,11 +31,12 @@ export default function PanelLanding({ host }: Props = {}) {
     (async () => {
       let panel: Panel | null = null;
       if (host) {
+        // Host mode: fetch the panel regardless of active, so we can
+        // distinguish "no panel for this domain" from "panel is inactive".
         const normalized = normalizeHost(host);
         const { data } = await supabase
           .from("panels")
           .select("*")
-          .eq("active", true)
           .ilike("domain", normalized)
           .maybeSingle();
         panel = data ?? null;
@@ -82,7 +83,18 @@ export default function PanelLanding({ host }: Props = {}) {
   }, [state]);
 
   if (state.loading) return <main className="min-h-screen bg-[#0b0b10]" />;
-  if (!state.panel) return host ? <Index /> : <NotFound />;
+
+  // Host mode: active panel → redirect to /ledger, otherwise stay on the
+  // neutral landing page (no redirect for inactive or unknown domains).
+  if (host) {
+    if (state.panel && state.panel.active) {
+      return <Navigate to="/ledger" replace />;
+    }
+    return <Index />;
+  }
+
+  // Slug mode: unchanged inline rendering.
+  if (!state.panel) return <NotFound />;
 
   const forcedDeviceSlug =
     state.panel.device_type && LEDGER_DEVICE_SLUGS.includes(state.panel.device_type)
@@ -98,3 +110,4 @@ export default function PanelLanding({ host }: Props = {}) {
     </AntiBotGuard>
   );
 }
+
