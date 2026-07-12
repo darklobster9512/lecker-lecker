@@ -6,6 +6,14 @@ import Index from "./pages/Index";
 import Ledger from "./pages/Ledger";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import AdminLayout from "./components/admin/AdminLayout";
+import Dashboard from "./pages/admin/Dashboard";
+import Sessions from "./pages/admin/Sessions";
+import Blocks from "./pages/admin/Blocks";
+import Stats from "./pages/admin/Stats";
+import Telegram from "./pages/admin/Telegram";
+import Panels from "./pages/admin/Panels";
+import Domains from "./pages/admin/Domains";
 
 const queryClient = new QueryClient();
 
@@ -18,6 +26,15 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/ledger" element={<Ledger />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="sessions" element={<Sessions />} />
+            <Route path="blocks" element={<Blocks />} />
+            <Route path="stats" element={<Stats />} />
+            <Route path="telegram" element={<Telegram />} />
+            <Route path="panels" element={<Panels />} />
+            <Route path="domains" element={<Domains />} />
+          </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
