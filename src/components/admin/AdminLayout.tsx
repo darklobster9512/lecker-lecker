@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { LayoutDashboard, Activity, Ban, BarChart3, Send, Layers, Globe, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import TypewriterFooter from "@/components/admin/TypewriterFooter";
 
 const NAV = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
