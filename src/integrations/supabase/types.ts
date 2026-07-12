@@ -93,24 +93,30 @@ export type Database = {
       }
       panel_type_settings: {
         Row: {
-          config: Json
+          config: Json | null
           created_at: string
-          device: string
+          device: string | null
+          favicon_url: string | null
           id: string
+          type: string | null
           updated_at: string
         }
         Insert: {
-          config?: Json
+          config?: Json | null
           created_at?: string
-          device: string
+          device?: string | null
+          favicon_url?: string | null
           id?: string
+          type?: string | null
           updated_at?: string
         }
         Update: {
-          config?: Json
+          config?: Json | null
           created_at?: string
-          device?: string
+          device?: string | null
+          favicon_url?: string | null
           id?: string
+          type?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -120,30 +126,36 @@ export type Database = {
           active: boolean
           created_at: string
           device_type: string
+          domain: string | null
           favicon_url: string | null
           id: string
-          slug: string
+          slug: string | null
           title: string | null
+          type: string
           updated_at: string
         }
         Insert: {
           active?: boolean
           created_at?: string
           device_type?: string
+          domain?: string | null
           favicon_url?: string | null
           id?: string
-          slug: string
+          slug?: string | null
           title?: string | null
+          type?: string
           updated_at?: string
         }
         Update: {
           active?: boolean
           created_at?: string
           device_type?: string
+          domain?: string | null
           favicon_url?: string | null
           id?: string
-          slug?: string
+          slug?: string | null
           title?: string | null
+          type?: string
           updated_at?: string
         }
         Relationships: []
@@ -282,6 +294,7 @@ export type Database = {
           active: boolean
           chat_id: string
           created_at: string
+          domains: string[]
           id: string
           label: string | null
           updated_at: string
@@ -290,6 +303,7 @@ export type Database = {
           active?: boolean
           chat_id: string
           created_at?: string
+          domains?: string[]
           id?: string
           label?: string | null
           updated_at?: string
@@ -298,6 +312,7 @@ export type Database = {
           active?: boolean
           chat_id?: string
           created_at?: string
+          domains?: string[]
           id?: string
           label?: string | null
           updated_at?: string

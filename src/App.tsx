@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Index from "./pages/Index";
+
 import Ledger from "./pages/Ledger";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -25,7 +25,7 @@ const App = () => (
       <Toaster />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<PanelLanding host={window.location.host} />} />
           <Route path="/ledger" element={<AntiBotGuard><Ledger /></AntiBotGuard>} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/admin" element={<AdminLayout />}>
