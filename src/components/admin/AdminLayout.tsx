@@ -25,6 +25,17 @@ export default function AdminLayout() {
     if (!user) navigate("/auth", { replace: true });
   }, [loading, user, navigate]);
 
+  useEffect(() => {
+    const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (!link) return;
+    const original = link.href;
+    link.href = "/favicon-admin.png";
+    return () => {
+      link.href = original;
+    };
+  }, []);
+
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Lade…</div>;
   }
