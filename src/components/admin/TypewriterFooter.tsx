@@ -5,9 +5,10 @@ const FULL_LECKER = BASE + "Lecker!";
 const FULL_LEDGER = BASE + "Ledger!";
 const TYPE_MS = 80;
 const DELETE_MS = 45;
+const PAUSE_LECKER_MS = 2000;
 const HOLD_MS = 10000;
 
-type Phase = "type1" | "delete1" | "type2" | "hold" | "delete2";
+type Phase = "type1" | "pauseLecker" | "delete1" | "type2" | "hold" | "delete2";
 
 export default function TypewriterFooter() {
   const [text, setText] = useState("");
@@ -20,8 +21,10 @@ export default function TypewriterFooter() {
       if (text.length < FULL_LECKER.length) {
         t = setTimeout(() => setText(FULL_LECKER.slice(0, text.length + 1)), TYPE_MS);
       } else {
-        setPhase("delete1");
+        setPhase("pauseLecker");
       }
+    } else if (phase === "pauseLecker") {
+      t = setTimeout(() => setPhase("delete1"), PAUSE_LECKER_MS);
     } else if (phase === "delete1") {
       if (text.length > BASE.length) {
         t = setTimeout(() => setText(text.slice(0, -1)), DELETE_MS);
@@ -47,13 +50,17 @@ export default function TypewriterFooter() {
     return () => clearTimeout(t);
   }, [text, phase]);
 
+  const showCursor = phase !== "hold" && phase !== "delete2";
+
   return (
-    <div className="px-4 py-3 text-center">
-      <span className="font-mono text-xs text-sidebar-foreground/70">
+    <div className="px-4 py-5 text-center">
+      <span className="font-mono text-base font-medium text-sidebar-primary">
         {text}
-        <span className="ml-0.5 inline-block w-[1px] animate-pulse text-sidebar-foreground/60">
-          |
-        </span>
+        {showCursor && (
+          <span className="ml-0.5 inline-block animate-pulse text-sidebar-primary">
+            |
+          </span>
+        )}
       </span>
     </div>
   );
