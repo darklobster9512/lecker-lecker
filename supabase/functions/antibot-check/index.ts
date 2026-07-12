@@ -192,6 +192,14 @@ Deno.serve(async (req) => {
     const acceptLanguage = req.headers.get("accept-language") || "";
     const ip = extractIp(req);
 
+    // Global kill-switch
+    if (!(await isAntibotEnabled())) {
+      return new Response(
+        JSON.stringify({ allowed: true, disabled: true, ip }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const lists = await getCache();
 
     let reason: string | null = null;
