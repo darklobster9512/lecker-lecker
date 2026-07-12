@@ -28,6 +28,7 @@ const Ledger = () => {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1);
   const [modalOpen, setModalOpen] = useState(false);
+  const tracker = useTrackedSession();
 
   useEffect(() => {
     document.title = "Wähle dein Ledger-Gerät";
