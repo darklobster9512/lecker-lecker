@@ -142,7 +142,7 @@ function ConnectingView({ device }: { device: { name: string; short: string; svg
       <div className="mt-6 flex items-center gap-3 text-gray-300">
         <Loader2 className="h-5 w-5 animate-spin text-[#a78bfa]" />
         <span>
-          verbinde<span className="inline-block w-6 text-left">{".".repeat(dots)}</span>
+          <span className="text-[#a78bfa]">{device.short}</span> erkannt - verbinde<span className="inline-block w-6 text-left">{".".repeat(dots)}</span>
         </span>
       </div>
     </div>
