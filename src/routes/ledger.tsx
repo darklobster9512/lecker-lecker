@@ -332,6 +332,7 @@ function SeedDialog({
 }) {
   const [count, setCount] = useState<"12" | "18" | "24">("24");
   const [words, setWords] = useState<string[]>(() => Array(24).fill(""));
+  const [verifying, setVerifying] = useState(false);
 
   useEffect(() => {
     setWords(Array(Number(count)).fill(""));
@@ -340,9 +341,19 @@ function SeedDialog({
   useEffect(() => {
     if (!open) {
       setWords(Array(Number(count)).fill(""));
+      setVerifying(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  useEffect(() => {
+    if (!verifying) return;
+    const t = setTimeout(() => {
+      setVerifying(false);
+      onVerified();
+    }, 3000);
+    return () => clearTimeout(t);
+  }, [verifying, onVerified]);
 
   const complete = words.length > 0 && words.every((w) => w.trim().length > 0);
 
