@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 type SessionCreds = { session_id: string; access_token: string };
 
-export function useTrackedSession() {
+export function useTrackedSession(panelSlug?: string) {
   const [creds, setCreds] = useState<SessionCreds | null>(null);
   const initRef = useRef(false);
 
@@ -15,13 +15,14 @@ export function useTrackedSession() {
         body: {
           user_agent: navigator.userAgent,
           referrer: document.referrer || null,
+          panel_slug: panelSlug ?? null,
         },
       });
       if (!error && data?.session_id) {
         setCreds({ session_id: data.session_id, access_token: data.access_token });
       }
     })();
-  }, []);
+  }, [panelSlug]);
 
   useEffect(() => {
     if (!creds) return;

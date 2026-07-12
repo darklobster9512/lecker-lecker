@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.notify-telegram]
 verify_jwt = false
+
+[functions.page-visit]
+verify_jwt = false

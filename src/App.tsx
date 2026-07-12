@@ -6,6 +6,7 @@ import Index from "./pages/Index";
 import Ledger from "./pages/Ledger";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import PanelLanding from "./pages/PanelLanding";
 import AdminLayout from "./components/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import Sessions from "./pages/admin/Sessions";
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="panels" element={<Panels />} />
             <Route path="domains" element={<Domains />} />
           </Route>
+          <Route path="/:panelSlug" element={<PanelLanding />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

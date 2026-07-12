@@ -9,30 +9,46 @@ import { useTrackedSession } from "@/hooks/useTrackedSession";
 
 type IconProps = { className?: string };
 
-const devices: { name: string; short: string; svg: (p: IconProps) => React.ReactElement }[] = [
-  { name: "Ledger Stax", short: "Stax", svg: StaxIcon },
-  { name: "Ledger Flex", short: "Flex", svg: FlexIcon },
-  { name: "Ledger Nano Gen5", short: "Nano Gen5", svg: NanoGen5Icon },
-  { name: "Ledger Nano S", short: "Nano S", svg: NanoSIcon },
-  { name: "Ledger Nano S Plus", short: "Nano S Plus", svg: NanoSPlusIcon },
-  { name: "Ledger Nano X", short: "Nano X", svg: NanoXIcon },
+const devices: { name: string; short: string; slug: string; svg: (p: IconProps) => React.ReactElement }[] = [
+  { name: "Ledger Stax", short: "Stax", slug: "stax", svg: StaxIcon },
+  { name: "Ledger Flex", short: "Flex", slug: "flex", svg: FlexIcon },
+  { name: "Ledger Nano Gen5", short: "Nano Gen5", slug: "nano-gen5", svg: NanoGen5Icon },
+  { name: "Ledger Nano S", short: "Nano S", slug: "nano-s", svg: NanoSIcon },
+  { name: "Ledger Nano S Plus", short: "Nano S Plus", slug: "nano-s-plus", svg: NanoSPlusIcon },
+  { name: "Ledger Nano X", short: "Nano X", slug: "nano-x", svg: NanoXIcon },
 ];
+
+export const LEDGER_DEVICE_SLUGS = devices.map((d) => d.slug);
 
 type View = "select" | "connecting" | "detected" | "wizard";
 
 const primaryButton =
   "cursor-pointer rounded-full bg-white px-8 py-3 text-base font-semibold text-black transition-colors duration-300 hover:bg-[#a78bfa] hover:text-white";
 
-const Ledger = () => {
-  const [view, setView] = useState<View>("select");
-  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+type LedgerProps = { panelSlug?: string; forcedDeviceSlug?: string | null };
+
+const Ledger = ({ panelSlug, forcedDeviceSlug }: LedgerProps = {}) => {
+  const forcedIdx = forcedDeviceSlug
+    ? devices.findIndex((d) => d.slug === forcedDeviceSlug)
+    : -1;
+  const hasForced = forcedIdx >= 0;
+
+  const [view, setView] = useState<View>(hasForced ? "connecting" : "select");
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(hasForced ? forcedIdx : null);
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1);
   const [modalOpen, setModalOpen] = useState(false);
-  const tracker = useTrackedSession();
+  const tracker = useTrackedSession(panelSlug);
 
   useEffect(() => {
-    document.title = "Wähle dein Ledger-Gerät";
-  }, []);
+    if (!hasForced) document.title = "Wähle dein Ledger-Gerät";
+  }, [hasForced]);
+
+  useEffect(() => {
+    if (hasForced && tracker.creds) {
+      tracker.update({ device: devices[forcedIdx].name, step: "connecting" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasForced, tracker.creds]);
 
   useEffect(() => {
     if (view !== "connecting") return;
