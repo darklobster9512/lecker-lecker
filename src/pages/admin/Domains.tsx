@@ -189,7 +189,7 @@ export default function Domains() {
     setDnsSaving(true);
     try {
       await invoke("addRecord", { id: dnsDomain.id, domain: "@", ip: dnsIp.trim() });
-      toast({ title: "DNS gesetzt", description: `A @ → ${dnsIp}` });
+      toast.success("DNS gesetzt", { description: `A @ → ${dnsIp}` });
       setDnsDomain(null);
       loadDomains();
     } catch (err) {
