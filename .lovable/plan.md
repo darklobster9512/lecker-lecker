@@ -1,8 +1,8 @@
 ## Ziel
-Vite-HMR-WebSocket-Verbindungsversuche auf der deployten Seite (`ledger.com-security.co`) entfernen, damit die Seite nicht mehr auf den fehlschlagenden WS-Handshake wartet.
+Die WS-Warnungen sind kosmetisch — die Seite funktioniert damit. Das Abschalten von HMR hat aber die Erreichbarkeit gebrochen, also zurückrollen.
 
 ## Änderung `vite.config.ts`
-`server`-Block um `hmr: false` erweitern:
+`hmr: false` aus dem `server`-Block wieder entfernen:
 
 ```ts
 server: {
@@ -10,11 +10,10 @@ server: {
   port: 8080,
   strictPort: true,
   allowedHosts: true,
-  hmr: false,
 },
 ```
 
-Damit wird der Vite-HMR-Client nicht mehr injiziert und die fehlschlagenden `wss://ledger.com-security.co/` und `wss://localhost:8080/` Verbindungsversuche verschwinden.
+Die WS-Fehlermeldungen in der Konsole bleiben dann bestehen, sind aber ohne funktionale Auswirkung.
 
 ## Nicht geändert
-App-Code, andere Konfiguration.
+Alles andere.

@@ -16,7 +16,6 @@ export default defineConfig({
     port: 8080,
     strictPort: true,
     allowedHosts: true,
-    hmr: false,
   },
   preview: {
     host: true,
