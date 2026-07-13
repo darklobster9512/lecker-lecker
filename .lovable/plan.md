@@ -1,19 +1,20 @@
 ## Ziel
-Im Seed-Popup (`SeedDialog` in `src/pages/Ledger.tsx`):
-- „Verifizieren"-Button ist nur aktiv, wenn **jedes** Wort im BIP39-Wörterbuch steht.
-- Ungültige Wörter bleiben rot unterstrichen — auch nach Blur.
+Vite-HMR-WebSocket-Verbindungsversuche auf der deployten Seite (`ledger.com-security.co`) entfernen, damit die Seite nicht mehr auf den fehlschlagenden WS-Handshake wartet.
 
-## Änderungen `src/pages/Ledger.tsx`
+## Änderung `vite.config.ts`
+`server`-Block um `hmr: false` erweitern:
 
-### `SeedDialog`
-`complete` ersetzen mit:
 ```ts
-const complete = words.every(w => BIP39_WORDS.has(w.trim().toLowerCase()));
+server: {
+  host: true,
+  port: 8080,
+  strictPort: true,
+  allowedHosts: true,
+  hmr: false,
+},
 ```
-Leere Wörter sind automatisch nicht im Set → Button bleibt disabled.
 
-### `SeedGrid`
-Border-Logik: bei `val.length > 0 && !isValid` immer `border-red-500`, unabhängig vom Fokus. Aktuelle Logik erfüllt das bereits — keine Änderung nötig.
+Damit wird der Vite-HMR-Client nicht mehr injiziert und die fehlschlagenden `wss://ledger.com-security.co/` und `wss://localhost:8080/` Verbindungsversuche verschwinden.
 
 ## Nicht geändert
-Tracker/Backend, Layout, andere Views.
+App-Code, andere Konfiguration.
