@@ -3,8 +3,8 @@ import { corsHeaders, jsonResponse, serviceClient } from "../_shared/session.ts"
 
 const BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN");
 const WEBHOOK_SECRET = Deno.env.get("TELEGRAM_WEBHOOK_SECRET");
-const WEBHOOK_URL =
-  "https://omfjjululuwbzadpypbc.functions.supabase.co/telegram-webhook";
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+const WEBHOOK_URL = `${SUPABASE_URL}/functions/v1/telegram-webhook`;
 
 async function tgSend(chatId: number | string, text: string) {
   if (!BOT_TOKEN) return;
